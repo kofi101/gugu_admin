@@ -10,8 +10,8 @@ enum MODE {
 }
 
 export const siteConfig = {
-  title: 'Isomorphic - React Typescript Admin Dashboard Template',
-  description: `Isomorphic the ultimate React TypeScript Admin Template. Streamline your admin dashboard development with our feature-rich, responsive, and highly customizable solution. Boost productivity and create stunning admin interfaces effortlessly.`,
+  title: 'Gugu Admin Dashboard',
+  description: `An admin dashboard for managing products and merchant information for gugu.com`,
   logo: logoImg,
   icon: logoIconImg,
   mode: MODE.LIGHT,
@@ -28,12 +28,12 @@ export const metaObject = (
     title: title ? `${title} - Isomorphic Furyroad` : siteConfig.title,
     description,
     openGraph: openGraph ?? {
-      title: title ? `${title} - Isomorphic Furyroad` : title,
+      title: title ? `${title} - Gugu admin dashboard` : title,
       description,
-      url: 'https://isomorphic-furyroad.vercel.app',
-      siteName: 'Isomorphic Furyroad', // https://developers.google.com/search/docs/appearance/site-names
+      url: 'https://gugu.com',
+      siteName: 'Gugu',
       images: {
-        url: 'https://s3.amazonaws.com/redqteam.com/isomorphic-furyroad/itemdep/isobanner.png',
+        url: '',
         width: 1200,
         height: 630,
       },

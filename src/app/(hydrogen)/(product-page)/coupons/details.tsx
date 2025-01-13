@@ -21,6 +21,7 @@ import { BsThreeDotsVertical } from 'react-icons/bs';
 import { SelectComponent } from '@/app/shared/ecommerce/product/create-edit/product-summary';
 import ApplyCoupon from './apply-coupon';
 import { IssueCouponToUser } from './issue-coupon';
+import { ReActivateCoupon } from './deactivate';
 
 export function CouponDetails({
   couponCode,
@@ -45,22 +46,25 @@ export function CouponDetails({
         </Button>
       </Popover.Trigger>
       <Popover.Content>
-        <EditCoupon
-          couponCode={couponCode}
-          couponID={couponID}
-          expiryDate={expiryDate}
-          couponAmount={couponAmount}
-          fetchCoupons={fetchCoupons}
-          applicableOptions={applicableOptions}
-          couponTypeId={couponTypeId}
-          couponPercentage={couponPercentage}
-          applicableId={applicableId}
-          startDate={startDate}
-          frequency={frequency}
-          applicationType={applicationType}
-        />
-        <ApplyCoupon couponCode={couponCode} />
-     <IssueCouponToUser couponCode={couponCode}/>
+        <div className="flex flex-col">
+          <EditCoupon
+            couponCode={couponCode}
+            couponID={couponID}
+            expiryDate={expiryDate}
+            couponAmount={couponAmount}
+            fetchCoupons={fetchCoupons}
+            applicableOptions={applicableOptions}
+            couponTypeId={couponTypeId}
+            couponPercentage={couponPercentage}
+            applicableId={applicableId}
+            startDate={startDate}
+            frequency={frequency}
+            applicationType={applicationType}
+          />
+          {/* <ApplyCoupon couponCode={couponCode} /> */}
+          <IssueCouponToUser couponCode={couponCode} />
+          <ReActivateCoupon couponCode={couponCode} />
+        </div>
       </Popover.Content>
     </Popover>
   );
@@ -165,7 +169,7 @@ const EditCoupon = ({
   return (
     <>
       <Button variant="text" onClick={() => setModalState(true)}>
-        Edit
+        Edit Coupon
       </Button>
       <Modal size="xl" isOpen={modalState} onClose={() => setModalState(false)}>
         <div className="m-auto px-7 py-12 ">
@@ -197,7 +201,7 @@ const EditCoupon = ({
 
               {/* Applicable ID */}
 
-              <SelectComponent
+              {/* <SelectComponent
                 options={applicableOptions?.map((item) => ({
                   label: item?.displayName,
                   value: item?.id,
@@ -206,7 +210,7 @@ const EditCoupon = ({
                 register={register('applicableId')}
                 error={errors?.applicableId?.message as string}
                 labelText="Apply Coupon Type"
-              />
+              /> */}
 
               {/* Start Date */}
 

@@ -30,7 +30,7 @@ export default function WelcomeBanner({
         </Title>
         {description && (
           <Text className="mb-5 text-sm leading-[1.6] text-gray-700 sm:mb-6 sm:text-base md:mb-8 lg:mb-10">
-            {description}
+            {description} 
           </Text>
         )}
         {children}
