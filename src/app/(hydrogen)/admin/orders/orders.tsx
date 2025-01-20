@@ -9,6 +9,8 @@ import { fetchUtil } from '@/utils/fetch';
 import { managementUrl } from '@/config/base-url';
 import toast from 'react-hot-toast';
 import { getUserToken } from '@/utils/get-token';
+import { AllOrderTypes } from './page';
+import { format } from 'date-fns';
 
 type Order = {
   orderId: string;
@@ -27,184 +29,116 @@ const orderStatusOptions = [
   { label: 'Cancelled', value: 'Cancelled' },
 ];
 
-export const OrdersManagement = () => {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(false);
-  const { control, handleSubmit } = useForm();
+export const OrdersManagement = ({
+  allOrders,
+  orderStatuses,
+}: {
+  allOrders: Array<AllOrderTypes>;
+}) => {
+  const [filteredStatus, setFilteredStatus] = useState('');
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
+  const filteredOrders = filteredStatus
+    ? allOrders.filter((order) => order.orderStatus === filteredStatus)
+    : allOrders;
 
-  const fetchOrders = async () => {
-    setLoading(true);
-    try {
-      const data = await fetchUtil(`${managementUrl}/orders`);
-      setOrders(data);
-      setLoading(false);
-    } catch (error) {
-      setLoading(false);
-      console.error('Error fetching orders:', error);
-    }
-  };
-
-  const updateOrderStatus = async (orderId: string, status: string) => {
-    try {
-      const token = await getUserToken();
-      await fetchUtil(`${managementUrl}/orders/${orderId}/status`, {
-        method: 'PUT',
-        body: JSON.stringify({ status }),
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      toast.success('Order status updated successfully');
-      fetchOrders();
-    } catch (error) {
-      toast.error('Failed to update order status');
-      console.error('Error updating order status:', error);
-    }
-  };
-
-  const processRefund = async (orderId: string) => {
-    try {
-      const token = await getUserToken();
-      await fetchUtil(`${managementUrl}/orders/${orderId}/refund`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      toast.success('Refund processed successfully');
-      fetchOrders();
-    } catch (error) {
-      toast.error('Failed to process refund');
-      console.error('Error processing refund:', error);
-    }
-  };
-
-  const handleCancellation = async (orderId: string) => {
-    try {
-      const token = await getUserToken();
-      await fetchUtil(`${managementUrl}/orders/${orderId}/cancel`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      toast.success('Order cancelled successfully');
-      fetchOrders();
-    } catch (error) {
-      toast.error('Failed to cancel order');
-      console.error('Error cancelling order:', error);
-    }
-  };
-
-  if (loading) {
-    return <SpinnerLoader />;
+  if (!allOrders || allOrders.length === 0) {
+    return <p className="mt-20 text-center text-gray-600">No orders found</p>;
   }
-
   return (
-    <div className="w-full rounded-lg bg-white p-6 shadow-md">
-      <h2 className="mb-6 text-xl font-bold">Orders Management</h2>
-      <ul className="space-y-4">
-        {(orders.length > 0 || dummy).map((order) => (
-          <li
-            key={order.orderId}
-            className="flex items-center justify-between rounded-lg bg-gray-100 p-4 shadow-sm"
+    <div className="max-w-full overflow-auto rounded-lg bg-white p-6 shadow-md">
+      <h4 className="mb-4 text-xl font-semibold text-gray-800">Order List</h4>
+
+      {/* Filter Buttons */}
+      <div className="mb-4 flex gap-2">
+        <Button
+          className={`rounded bg-gray-200 px-4 py-2 text-sm font-medium hover:text-white ${
+            !filteredStatus ? 'bg-blue-500 text-white' : 'text-gray-800'
+          }`}
+          onClick={() => setFilteredStatus('')}
+        >
+          All
+        </Button>
+        {['Processing', 'Shipped', 'Delivered', 'Cancelled'].map((status) => (
+          <Button
+            key={status}
+            className={`rounded px-4 py-2 text-sm font-medium hover:text-white ${
+              filteredStatus === status
+                ? 'bg-blue-500 text-white'
+                : 'bg-gray-200 text-gray-800'
+            }`}
+            onClick={() => setFilteredStatus(status)}
           >
-            <div>
-              <p className="font-semibold">Order ID: {order.orderId}</p>
-              <p>Customer: {order.customerName}</p>
-              <p>
-                Order Date: {new Date(order.orderDate).toLocaleDateString()}
-              </p>
-              <p>Total Amount: ${order.totalAmount}</p>
-              <p>Status: {order.orderStatus}</p>
-              {order.refundStatus && <p>Refund Status: {order.refundStatus}</p>}
-            </div>
-            <div className="flex gap-4">
-              <Controller
-                name="orderStatus"
-                control={control}
-                defaultValue={order.orderStatus}
-                render={({ field: { onChange, value } }) => (
-                  <Select
-                    options={orderStatusOptions}
-                    value={value}
-                    onChange={(value) => {
-                      onChange(value);
-                      updateOrderStatus(order.orderId, value);
-                    }}
-                    label="Update Status"
-                    className="w-40"
-                  />
-                )}
-              />
-              <Button
-                onClick={() => processRefund(order.orderId)}
-                variant="outline"
-                size="sm"
-              >
-                Process Refund
-              </Button>
-              <Button
-                onClick={() => handleCancellation(order.orderId)}
-                variant="outline"
-                size="sm"
-              >
-                Cancel Order
-              </Button>
-            </div>
-          </li>
+            {status}
+          </Button>
         ))}
-      </ul>
+      </div>
+
+      <table className="min-w-full border border-gray-200 bg-white text-left">
+        <thead>
+          <tr>
+            <th className="border-b bg-gray-100 px-4 py-2 text-sm font-semibold uppercase text-gray-600">
+              Order Number
+            </th>
+            <th className="border-b bg-gray-100 px-4 py-2 text-sm font-semibold uppercase text-gray-600">
+              Customer Name
+            </th>
+            <th className="border-b bg-gray-100 px-4 py-2 text-sm font-semibold uppercase text-gray-600">
+              Transaction Date
+            </th>
+            <th className="border-b bg-gray-100 px-4 py-2 text-sm font-semibold uppercase text-gray-600">
+              Quantity
+            </th>
+            <th className="border-b bg-gray-100 px-4 py-2 text-sm font-semibold uppercase text-gray-600">
+              Item Total (GHC)
+            </th>
+            <th className="border-b bg-gray-100 px-4 py-2 text-sm font-semibold uppercase text-gray-600">
+              Discount (GHC)
+            </th>
+            <th className="border-b bg-gray-100 px-4 py-2 text-sm font-semibold uppercase text-gray-600">
+              Shipping Cost (GHC)
+            </th>
+            <th className="border-b bg-gray-100 px-4 py-2 text-sm font-semibold uppercase text-gray-600">
+              Total (GHC)
+            </th>
+            <th className="border-b bg-gray-100 px-4 py-2 text-sm font-semibold uppercase text-gray-600">
+              Order Status
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {allOrders?.map((order) => (
+            <tr className="" key={order.orderNumber}>
+              <td className="border-b px-4 py-4 text-sm text-gray-700">
+                {order.orderNumber}
+              </td>
+              <td className="border-b px-4 py-4 text-sm text-gray-700">
+                {order.fullName}
+              </td>
+              <td className="border-b px-4 py-4 text-sm text-gray-700">
+                {format(new Date(order.transactionDate), 'yyyy-MM-dd')}
+              </td>
+              <td className="border-b px-4 py-4 text-sm text-gray-700">
+                {order.quantity}
+              </td>
+              <td className="border-b px-4 py-4 text-sm text-gray-700">
+                {order.itemTotal.toFixed(2)}
+              </td>
+              <td className="border-b px-4 py-4 text-sm text-gray-700">
+                {order.discount.toFixed(2)}
+              </td>
+              <td className="border-b px-4 py-4 text-sm text-gray-700">
+                {order.shippingCost.toFixed(2)}
+              </td>
+              <td className="border-b px-4 py-4 text-sm text-gray-700">
+                {order.total.toFixed(2)}
+              </td>
+              <td className="border-b px-4 py-4 text-sm text-gray-700">
+                {order.orderStatus}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };
-
-const dummy = [
-  {
-    orderId: 'ORD001',
-    customerName: 'John Doe',
-    orderDate: '2024-08-01T10:30:00Z',
-    orderStatus: 'Pending',
-    totalAmount: 250.99,
-    refundStatus: null,
-  },
-  {
-    orderId: 'ORD002',
-    customerName: 'Jane Smith',
-    orderDate: '2024-08-02T12:45:00Z',
-    orderStatus: 'Shipped',
-    totalAmount: 150.0,
-    refundStatus: null,
-  },
-  {
-    orderId: 'ORD003',
-    customerName: 'Michael Brown',
-    orderDate: '2024-08-03T14:00:00Z',
-    orderStatus: 'Delivered',
-    totalAmount: 99.99,
-    refundStatus: 'Refunded',
-  },
-  {
-    orderId: 'ORD004',
-    customerName: 'Emily Johnson',
-    orderDate: '2024-08-04T16:15:00Z',
-    orderStatus: 'Processed',
-    totalAmount: 349.5,
-    refundStatus: null,
-  },
-  {
-    orderId: 'ORD005',
-    customerName: 'David Wilson',
-    orderDate: '2024-08-05T09:00:00Z',
-    orderStatus: 'Cancelled',
-    totalAmount: 220.75,
-    refundStatus: null,
-  },
-];
