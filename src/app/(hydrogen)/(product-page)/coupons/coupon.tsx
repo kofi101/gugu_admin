@@ -31,6 +31,7 @@ const CouponPage = () => {
       expiryDate: string;
       isIssued: boolean;
       redeemed: boolean;
+      couponPercentage: number;
     }>
   >([]);
 
@@ -243,7 +244,7 @@ const CouponPage = () => {
                       Code
                     </th>
                     <th className="border-b-2 border-gray-200 bg-gray-100 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
-                      Amount
+                      Percentage (%)
                     </th>
                     <th className="border-b-2 border-gray-200 bg-gray-100 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                       Expiry Date
@@ -254,9 +255,7 @@ const CouponPage = () => {
                     <th className="border-b-2 border-gray-200 bg-gray-100 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                       Redeemed
                     </th>
-                    {/* <th className="border-b-2 border-gray-200 bg-gray-100 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
-                    Applicable To
-                  </th> */}
+
                     <th className="border-b-2 border-gray-200 bg-gray-100 px-5 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-600">
                       {' '}
                     </th>
@@ -269,7 +268,7 @@ const CouponPage = () => {
                         {coupon.couponCode}
                       </td>
                       <td className="border-b border-gray-200 bg-white px-5 py-5 text-sm">
-                        {coupon.couponAmount}
+                        {coupon.couponPercentage}
                       </td>
                       <td className="border-b border-gray-200 bg-white px-5 py-5 text-sm">
                         {format(new Date(coupon.expiryDate), 'yyyy-MM-dd')}
@@ -280,9 +279,7 @@ const CouponPage = () => {
                       <td className="border-b border-gray-200 bg-white px-5 py-5 text-sm">
                         {coupon.redeemed ? 'Yes' : 'No'}
                       </td>
-                      {/* <td className="border-b border-gray-200 bg-white px-5 py-5 text-sm">
-                      {coupon.applicationType}
-                    </td> */}
+
                       <td className="border-b border-gray-200 bg-white px-5 py-5 text-sm">
                         <CouponDetails
                           couponCode={coupon.couponCode}

@@ -67,7 +67,7 @@ export const ApplyCoupon = ({ couponCode }: { couponCode: string }) => {
       </Button>
 
       {/* Modal to apply coupon */}
-      <Modal size="xl" isOpen={modalState} onClose={() => setModalState(false)}>
+      <Modal size="md" isOpen={modalState} onClose={() => setModalState(false)}>
         {loading ? (
           <div className="flex items-center justify-center">
             <SpinnerLoader />
@@ -360,7 +360,7 @@ const ApplyToProductCategory = ({ allProducts, merchantID, couponCode }) => {
           }))}
           placeholder="Select Product Category"
           register={register('productCategory')}
-          labelText="Apply to Product Category"
+          laeblText="Apply to Product Category"
           error={errors?.productCategory?.message as string}
         />
       </div>
