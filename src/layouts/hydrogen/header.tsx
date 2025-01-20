@@ -2,15 +2,18 @@
 
 import Link from 'next/link';
 import HamburgerButton from '@/layouts/hamburger-button';
-import SearchWidget from '@/components/search/search';
 import Sidebar from '@/layouts/hydrogen/sidebar';
 import Logo from '@/components/logo';
-import HeaderMenuRight from '@/layouts/header-menu-right';
 import StickyHeader from '@/layouts/sticky-header';
+import { MdLogout } from 'react-icons/md';
+import { useSignOut } from 'react-firebase-hooks/auth';
+import { auth } from '@/config/firebase';
 
 export default function Header() {
+  const [signOut] = useSignOut(auth);
+
   return (
-    <StickyHeader className="2xl:py-5 3xl:px-8 4xl:px-10">
+    <StickyHeader className="lg:justify-between 2xl:py-5 3xl:px-8 4xl:px-10">
       <div className="flex w-full max-w-2xl items-center">
         <HamburgerButton
           view={<Sidebar className="static w-full 2xl:w-full" />}
@@ -22,11 +25,16 @@ export default function Header() {
         >
           <Logo iconOnly={true} />
         </Link>
-
-        <SearchWidget />
       </div>
-
-      <HeaderMenuRight />
+      <Link
+        onClick={signOut}
+        href={'/auth/sign-in'}
+        aria-label="Logout"
+        className="me-4 flex items-center gap-2 text-gray-800 underline underline-offset-2 hover:text-gray-900 lg:me-5 lg:mr-4"
+      >
+        <p>Logout</p>
+        <MdLogout size={20} />
+      </Link>
     </StickyHeader>
   );
 }

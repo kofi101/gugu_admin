@@ -1,26 +1,21 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
 import { auth } from '@/config/firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { fetchUtil } from '@/utils/fetch';
 import { baseUrl } from '@/config/base-url';
 import { getUserToken } from '@/utils/get-token';
-import { Modal, Select, Popover, Title, Text } from 'rizzui';
-import { format } from 'date-fns';
-import { CiEdit } from 'react-icons/ci';
-import { useForm, Controller } from 'react-hook-form';
+import { Modal,Popover } from 'rizzui';
+import { useForm } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import toast from 'react-hot-toast';
 import { MdOutlineClose } from 'react-icons/md';
 import { Unauthorized } from '../products/configs/page';
-import { SpinnerLoader } from '@/components/ui/spinner';
 import { BsThreeDotsVertical } from 'react-icons/bs';
-import { SelectComponent } from '@/app/shared/ecommerce/product/create-edit/product-summary';
-import ApplyCoupon from './apply-coupon';
 import { IssueCouponToUser } from './issue-coupon';
+import { ReActivateCoupon, DeactivateCoupon } from './deactivate';
 
 export function CouponDetails({
   couponCode,
@@ -45,22 +40,25 @@ export function CouponDetails({
         </Button>
       </Popover.Trigger>
       <Popover.Content>
-        <EditCoupon
-          couponCode={couponCode}
-          couponID={couponID}
-          expiryDate={expiryDate}
-          couponAmount={couponAmount}
-          fetchCoupons={fetchCoupons}
-          applicableOptions={applicableOptions}
-          couponTypeId={couponTypeId}
-          couponPercentage={couponPercentage}
-          applicableId={applicableId}
-          startDate={startDate}
-          frequency={frequency}
-          applicationType={applicationType}
-        />
-        <ApplyCoupon couponCode={couponCode} />
-     <IssueCouponToUser couponCode={couponCode}/>
+        <div className="flex flex-col">
+          <EditCoupon
+            couponCode={couponCode}
+            couponID={couponID}
+            expiryDate={expiryDate}
+            couponAmount={couponAmount}
+            fetchCoupons={fetchCoupons}
+            applicableOptions={applicableOptions}
+            couponTypeId={couponTypeId}
+            couponPercentage={couponPercentage}
+            applicableId={applicableId}
+            startDate={startDate}
+            frequency={frequency}
+            applicationType={applicationType}
+          />
+          <IssueCouponToUser couponCode={couponCode} />
+          <ReActivateCoupon couponCode={couponCode} />
+          <DeactivateCoupon couponCode={couponCode} />
+        </div>
       </Popover.Content>
     </Popover>
   );
@@ -106,9 +104,9 @@ const EditCoupon = ({
     defaultValues: {
       couponCode: couponCode,
       couponTypeId: couponTypeId,
-      couponAmount: couponAmount,
+      // couponAmount: couponAmount,
       couponPercentage: couponPercentage,
-      applicableId: applicableId,
+      // applicableId: applicableId,
       startDate: startDate,
       expiryDate: expiryDate,
       frequency: frequency,
@@ -175,15 +173,6 @@ const EditCoupon = ({
           </div>
           <form onSubmit={handleSubmit(onSubmit)}>
             <div className="grid gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-3 lg:gap-8">
-              <Input
-                label="Coupon Amount GHC"
-                type="number"
-                placeholder="Enter coupon amount"
-                id="couponAmount"
-                {...register('couponAmount')}
-                error={errors.couponAmount?.message as string}
-              />
-
               {/* Coupon Percentage */}
 
               <Input
@@ -197,7 +186,7 @@ const EditCoupon = ({
 
               {/* Applicable ID */}
 
-              <SelectComponent
+              {/* <SelectComponent
                 options={applicableOptions?.map((item) => ({
                   label: item?.displayName,
                   value: item?.id,
@@ -206,7 +195,7 @@ const EditCoupon = ({
                 register={register('applicableId')}
                 error={errors?.applicableId?.message as string}
                 labelText="Apply Coupon Type"
-              />
+              /> */}
 
               {/* Start Date */}
 
