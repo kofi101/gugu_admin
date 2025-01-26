@@ -27,18 +27,12 @@ const initialValues: LoginSchema = {
 export default function SignInForm() {
   const [reset, setReset] = useState({});
   const [loading, setLoading] = useState(false);
-  // const [superAdmin, setSuperAdmin] = useState<boolean>(false);
+
   const [signInWithEmailAndPassword] = useSignInWithEmailAndPassword(auth);
   const router = useRouter();
   const onSubmit: SubmitHandler<LoginSchema> = async (data) => {
     try {
       setLoading(true);
-      // todo: create super admin email and check for it (data)
-
-      // if (data.email === 'admin@gugu.com') {
-      //   // setSuperAdmin(true);
-      //   // do what super admin here
-      // }
 
       const signInRes = await signInWithEmailAndPassword(
         data.email,
@@ -48,7 +42,9 @@ export default function SignInForm() {
       if (!signInRes) {
         setLoading(false);
         setReset({ email: '', password: '' });
-        return toast.error(<Text>Invalid email or password</Text>);
+        return toast.error(
+          <Text>Invalid email or password, please try again</Text>
+        );
       }
 
       const loginRes = await fetch('/auth/sign-in/api', {
@@ -64,7 +60,7 @@ export default function SignInForm() {
         return toast.error(<Text>Something went wrong, try again</Text>);
       }
 
-      toast.success(<Text>Login successful</Text>);
+      toast.success(<Text>Login successful, redirecting..</Text>);
 
       router.push('/');
 

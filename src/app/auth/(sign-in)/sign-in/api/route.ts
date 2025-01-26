@@ -24,8 +24,6 @@ export async function POST(request: NextRequest, response: NextResponse) {
 
     const dbToken = await dbTokenRes.json();
 
-    console.log('helle', dbToken);
-
     cookies().set('token', dbToken?.token, { secure: true });
     cookies().set('userType', dbToken?.userType, { secure: true });
 

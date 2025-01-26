@@ -5,8 +5,8 @@ import React, { useCallback, useState } from 'react';
 import Image from 'next/image';
 import isEmpty from 'lodash/isEmpty';
 import prettyBytes from 'pretty-bytes';
-import type { FileWithPath } from '@uploadthing/react';
-import { useDropzone } from '@uploadthing/react/hooks';
+// import type { FileWithPath } from '@uploadthing/react';
+import { useDropzone } from '@uploadthing/react';
 import { PiTrashBold } from 'react-icons/pi';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
@@ -39,7 +39,7 @@ export default function UploadZone({
   setExistingImages,
 }: UploadZoneProps) {
   const onDrop = useCallback(
-    (acceptedFiles: FileWithPath[]) => {
+    (acceptedFiles) => {
       const files = [...filesData];
 
       files[fileIndex] = acceptedFiles;
