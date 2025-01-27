@@ -68,7 +68,7 @@ export default function AuthWrapperOne({
                 {description}
               </Text>
             </div>
-            {isSocialLoginActive && (
+            {/* {isSocialLoginActive && (
               <>
                 <div className="grid grid-cols-1 gap-4 pb-5 md:grid-cols-2 md:pb-6 xl:gap-5 xl:pb-7">
                   <Button
@@ -96,7 +96,7 @@ export default function AuthWrapperOne({
                 </div>
                 <OrSeparation title="OR" className="mb-5 2xl:mb-7" isCenter />
               </>
-            )}
+            )} */}
 
             {children}
           </div>

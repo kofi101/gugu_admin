@@ -1,210 +1,232 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { SpinnerLoader } from '@/components/ui/spinner';
-import { fetchUtil } from '@/utils/fetch';
-import { managementUrl } from '@/config/base-url';
+import { baseUrl } from '@/config/base-url';
 import toast from 'react-hot-toast';
 import { getUserToken } from '@/utils/get-token';
+import { Input } from 'rizzui';
+import { AllOrderTypes } from './page';
+import { format } from 'date-fns';
+import { Unauthorized } from '../../(product-page)/products/configs/page';
+import { MdClose } from 'react-icons/md';
 
-type Order = {
-  orderId: string;
-  customerName: string;
-  orderDate: string;
-  orderStatus: string;
-  totalAmount: number;
-  refundStatus?: string;
+type OrderStatus = {
+  id: number;
+  name: string;
+  displayName: string;
 };
 
-const orderStatusOptions = [
-  { label: 'Pending', value: 'Pending' },
-  { label: 'Processed', value: 'Processed' },
-  { label: 'Shipped', value: 'Shipped' },
-  { label: 'Delivered', value: 'Delivered' },
-  { label: 'Cancelled', value: 'Cancelled' },
-];
+export const OrdersManagement = ({
+  allOrders,
+  orderStatuses,
+}: {
+  allOrders: Array<AllOrderTypes>;
+  orderStatuses: Array<OrderStatus>;
+}) => {
+  const [filteredStatus, setFilteredStatus] = useState();
+  const [orders, setOrders] = useState(allOrders);
 
-export const OrdersManagement = () => {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(false);
-  const { control, handleSubmit } = useForm();
+  const [formLoading, setFormLoading] = useState(false);
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
+  const {
+    handleSubmit,
+    register,
+    reset,
+    formState: { errors },
+  } = useForm();
 
-  const fetchOrders = async () => {
-    setLoading(true);
+  const onSubmit = async (formData) => {
+    setFormLoading(true);
     try {
-      const data = await fetchUtil(`${managementUrl}/orders`);
+      const token = await getUserToken();
+
+      const fetchOptions = {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + token,
+        },
+      };
+
+      const response = await fetch(
+        `${baseUrl}/Orders/AllOrdersByDate/${formData.start}/${formData.end}`,
+        fetchOptions
+      );
+
+      if (response.status === 401) {
+        setFormLoading(false);
+        return toast.error(<Unauthorized />);
+      }
+
+      if (!response.ok) {
+        setFormLoading(false);
+        return toast.error('Failed to filter Orders');
+      }
+
+      const data = await response.json();
+
       setOrders(data);
-      setLoading(false);
+
+      setFormLoading(false);
     } catch (error) {
-      setLoading(false);
-      console.error('Error fetching orders:', error);
+      setFormLoading(false);
+      toast.error('Failed to filter Orders');
+      console.error('Failed to filter Orders', error);
     }
   };
 
-  const updateOrderStatus = async (orderId: string, status: string) => {
-    try {
-      const token = await getUserToken();
-      await fetchUtil(`${managementUrl}/orders/${orderId}/status`, {
-        method: 'PUT',
-        body: JSON.stringify({ status }),
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      toast.success('Order status updated successfully');
-      fetchOrders();
-    } catch (error) {
-      toast.error('Failed to update order status');
-      console.error('Error updating order status:', error);
-    }
-  };
+  const filteredOrders = filteredStatus
+    ? Array.isArray(orders) &&
+      orders?.filter((order) => order.orderStatus === filteredStatus.value)
+    : orders;
 
-  const processRefund = async (orderId: string) => {
-    try {
-      const token = await getUserToken();
-      await fetchUtil(`${managementUrl}/orders/${orderId}/refund`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      toast.success('Refund processed successfully');
-      fetchOrders();
-    } catch (error) {
-      toast.error('Failed to process refund');
-      console.error('Error processing refund:', error);
-    }
-  };
-
-  const handleCancellation = async (orderId: string) => {
-    try {
-      const token = await getUserToken();
-      await fetchUtil(`${managementUrl}/orders/${orderId}/cancel`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      toast.success('Order cancelled successfully');
-      fetchOrders();
-    } catch (error) {
-      toast.error('Failed to cancel order');
-      console.error('Error cancelling order:', error);
-    }
-  };
-
-  if (loading) {
-    return <SpinnerLoader />;
+  if (!orders || orders?.length === 0) {
+    return <p className="mt-20 text-center text-gray-600">No orders found</p>;
   }
-
   return (
-    <div className="w-full rounded-lg bg-white p-6 shadow-md">
-      <h2 className="mb-6 text-xl font-bold">Orders Management</h2>
-      <ul className="space-y-4">
-        {(orders.length > 0 || dummy).map((order) => (
-          <li
-            key={order.orderId}
-            className="flex items-center justify-between rounded-lg bg-gray-100 p-4 shadow-sm"
+    <div className="max-w-full overflow-auto rounded-lg bg-white p-6 shadow-md">
+      <h4 className="mb-4 text-xl font-semibold text-gray-800">Order List</h4>
+
+      <div className="mb-6 flex flex-col lg:flex-row lg:items-center lg:justify-between lg:gap-10">
+        <div className="mb-10 w-full md:mb-4 md:w-72 lg:mb-0">
+          <Select
+            label="Filter order status"
+            options={orderStatuses?.map((status) => ({
+              label: status.displayName,
+              value: status.name,
+            }))}
+            value={filteredStatus}
+            onChange={setFilteredStatus}
+            clearable={filteredStatus !== null}
+            onClear={() => setFilteredStatus(null)}
+          />
+        </div>
+
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="flex flex-col gap-2 md:flex-row md:items-center md:gap-4"
+        >
+          <Input
+            {...register('start', {
+              required: 'Start date is required',
+            })}
+            className="mb-4 w-full md:mb-0"
+            label="Start Date"
+            type="date"
+            error={errors.start?.message as string}
+          />
+          <Input
+            {...register('end', {
+              required: 'End date is required',
+            })}
+            className="mb-4 w-full md:mb-0"
+            label="End Date"
+            type="date"
+            error={errors.end?.message as string}
+          />
+
+          <Button
+            isLoading={formLoading}
+            className="mt-2 w-full md:mt-7 md:w-80"
+            type="submit"
           >
-            <div>
-              <p className="font-semibold">Order ID: {order.orderId}</p>
-              <p>Customer: {order.customerName}</p>
-              <p>
-                Order Date: {new Date(order.orderDate).toLocaleDateString()}
-              </p>
-              <p>Total Amount: ${order.totalAmount}</p>
-              <p>Status: {order.orderStatus}</p>
-              {order.refundStatus && <p>Refund Status: {order.refundStatus}</p>}
-            </div>
-            <div className="flex gap-4">
-              <Controller
-                name="orderStatus"
-                control={control}
-                defaultValue={order.orderStatus}
-                render={({ field: { onChange, value } }) => (
-                  <Select
-                    options={orderStatusOptions}
-                    value={value}
-                    onChange={(value) => {
-                      onChange(value);
-                      updateOrderStatus(order.orderId, value);
-                    }}
-                    label="Update Status"
-                    className="w-40"
-                  />
-                )}
-              />
-              <Button
-                onClick={() => processRefund(order.orderId)}
-                variant="outline"
-                size="sm"
-              >
-                Process Refund
-              </Button>
-              <Button
-                onClick={() => handleCancellation(order.orderId)}
-                variant="outline"
-                size="sm"
-              >
-                Cancel Order
-              </Button>
-            </div>
-          </li>
-        ))}
-      </ul>
+            {' '}
+            Filter By Date
+          </Button>
+          <Button
+            title="Clear Filters"
+            className="mt-2 w-fit md:mt-7 "
+            onClick={() => {
+              setOrders(allOrders);
+              reset();
+            }}
+          >
+            <MdClose size={24} />
+          </Button>
+        </form>
+      </div>
+
+      {formLoading && (
+        <div className="flex items-center justify-center ">
+          <SpinnerLoader />
+        </div>
+      )}
+      {!formLoading && (
+        <table className="min-w-full border border-gray-200 bg-white text-left">
+          <thead>
+            <tr>
+              <th className="border-b bg-gray-100 px-4 py-2 text-sm font-semibold uppercase text-gray-600">
+                Order Number
+              </th>
+              <th className="border-b bg-gray-100 px-4 py-2 text-sm font-semibold uppercase text-gray-600">
+                Customer Name
+              </th>
+              <th className="border-b bg-gray-100 px-4 py-2 text-sm font-semibold uppercase text-gray-600">
+                Transaction Date
+              </th>
+              <th className="border-b bg-gray-100 px-4 py-2 text-sm font-semibold uppercase text-gray-600">
+                Quantity
+              </th>
+              <th className="border-b bg-gray-100 px-4 py-2 text-sm font-semibold uppercase text-gray-600">
+                Item Total (GHC)
+              </th>
+              <th className="border-b bg-gray-100 px-4 py-2 text-sm font-semibold uppercase text-gray-600">
+                Discount (GHC)
+              </th>
+              <th className="border-b bg-gray-100 px-4 py-2 text-sm font-semibold uppercase text-gray-600">
+                Shipping Cost (GHC)
+              </th>
+              <th className="border-b bg-gray-100 px-4 py-2 text-sm font-semibold uppercase text-gray-600">
+                Total (GHC)
+              </th>
+              <th className="border-b bg-gray-100 px-4 py-2 text-sm font-semibold uppercase text-gray-600">
+                Order Status
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {Array.isArray(filteredOrders) &&
+              filteredOrders?.map((order) => (
+                <tr className="" key={order.orderNumber}>
+                  <td className="border-b px-4 py-4 text-sm text-gray-700">
+                    {order.orderNumber}
+                  </td>
+                  <td className="border-b px-4 py-4 text-sm text-gray-700">
+                    {order.fullName}
+                  </td>
+                  <td className="border-b px-4 py-4 text-sm text-gray-700">
+                    {format(new Date(order.transactionDate), 'yyyy-MM-dd')}
+                  </td>
+                  <td className="border-b px-4 py-4 text-sm text-gray-700">
+                    {order.quantity}
+                  </td>
+                  <td className="border-b px-4 py-4 text-sm text-gray-700">
+                    {order.itemTotal.toFixed(2)}
+                  </td>
+                  <td className="border-b px-4 py-4 text-sm text-gray-700">
+                    {order.discount.toFixed(2)}
+                  </td>
+                  <td className="border-b px-4 py-4 text-sm text-gray-700">
+                    {order.shippingCost.toFixed(2)}
+                  </td>
+                  <td className="border-b px-4 py-4 text-sm text-gray-700">
+                    {order.total.toFixed(2)}
+                  </td>
+                  <td className="border-b px-4 py-4 text-sm text-gray-700">
+                    {order.orderStatus === 'OutforDelivery'
+                      ? 'Out for Delivery'
+                      : order.orderStatus}
+                  </td>
+                </tr>
+              ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 };
-
-const dummy = [
-  {
-    orderId: 'ORD001',
-    customerName: 'John Doe',
-    orderDate: '2024-08-01T10:30:00Z',
-    orderStatus: 'Pending',
-    totalAmount: 250.99,
-    refundStatus: null,
-  },
-  {
-    orderId: 'ORD002',
-    customerName: 'Jane Smith',
-    orderDate: '2024-08-02T12:45:00Z',
-    orderStatus: 'Shipped',
-    totalAmount: 150.0,
-    refundStatus: null,
-  },
-  {
-    orderId: 'ORD003',
-    customerName: 'Michael Brown',
-    orderDate: '2024-08-03T14:00:00Z',
-    orderStatus: 'Delivered',
-    totalAmount: 99.99,
-    refundStatus: 'Refunded',
-  },
-  {
-    orderId: 'ORD004',
-    customerName: 'Emily Johnson',
-    orderDate: '2024-08-04T16:15:00Z',
-    orderStatus: 'Processed',
-    totalAmount: 349.5,
-    refundStatus: null,
-  },
-  {
-    orderId: 'ORD005',
-    customerName: 'David Wilson',
-    orderDate: '2024-08-05T09:00:00Z',
-    orderStatus: 'Cancelled',
-    totalAmount: 220.75,
-    refundStatus: null,
-  },
-];

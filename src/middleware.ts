@@ -1,58 +1,61 @@
 import { NextResponse, type NextRequest } from 'next/server';
 
-export async function middleware(request: NextRequest, response: NextResponse) {
-  const session = request.cookies.get('session');
-
-  if (!session) {
-    return NextResponse.redirect(new URL('/auth/sign-in', request.url));
-  }
-
-  const responseAPI = await fetch(
-    `${request.nextUrl.origin}/auth/sign-in/api`,
-    {
-      headers: {
-        Cookie: `session=${session?.value}`,
-      },
+const globalPrefixes = ['/api', '/_next'];
+export async function middleware(request: NextRequest) {
+  // Allow internal Next.js requests (e.g., /_next/*)
+  for (const prefix of globalPrefixes) {
+    if (request.nextUrl.pathname.startsWith(prefix)) {
+      return NextResponse.next();
     }
-  );
+  }
 
-  if (responseAPI.status !== 200) {
+  // Allow all users to access /auth/* paths
+  if (request.nextUrl.pathname.startsWith('/auth')) {
+    return NextResponse.next();
+  }
+
+  const session = request.cookies.get('session')?.value;
+  const userType = request.cookies.get('userType')?.value;
+
+  // Redirect unauthenticated users to sign-in if not accessing /auth/*
+  if (!session || !userType) {
     return NextResponse.redirect(new URL('/auth/sign-in', request.url));
   }
 
-  return NextResponse.next();
-}
+  // Validate the session via API call
+  try {
+    const responseAPI = await fetch(
+      `${request.nextUrl.origin}/auth/sign-in/api`,
+      {
+        headers: { Cookie: `session=${session}` },
+      }
+    );
 
-export const config = {
-  // restricted routes
-  matcher: [
-    // '/',
-    // '/products',
-    // // '/products/create',
-    // '/products/configs',
-    // '/products/orders',
-    // '/products/orders/:path*',
-    // '/products/reviews',
-    // '/analytics',
-    // '/invoice',
-    // '/invoice/create',
-    // '/invoice/:path*',
-    // '/invoice/:path/edit',
-    // '/admin',
-    // '/admin/business',
-    // '/admin/products',
-    // '/admin/orders',
-    // '/admin/inventory',
-    // '/admin/user-control',
-    // '/admin/communication',
-    // '/admin/customer-services',
-    // '/admin/business/merchants',
-    // '/admin/business/customers',
-    // '/admin/products/pending',
-    // '/admin/products/approved',
-    // '/admin/user-control/business-info',
-    // '/admin/user-control/roles',
-    // '/admin/analytics',
-    // '/admin/content',
-  ],
-};
+    if (responseAPI.status !== 200) {
+      return NextResponse.redirect(new URL('/auth/sign-in', request.url));
+    }
+  } catch (error) {
+    console.error('API validation failed:', error);
+    return NextResponse.redirect(new URL('/auth/sign-in', request.url));
+  }
+
+  // Define route prefixes for user types
+  const routePrefixes = {
+    Merchant: ['/'],
+    SuperAdministrator: ['/admin'],
+  };
+
+  const userRoutes =
+    routePrefixes[userType as 'Merchant' | 'SuperAdministrator'];
+
+  // Allow access to user-specific routes
+  if (
+    userRoutes?.some((prefix) => request.nextUrl.pathname.startsWith(prefix))
+  ) {
+    return NextResponse.next();
+  }
+
+  // Redirect users to their default dashboard if accessing unauthorized routes
+  const redirectUrl = userType === 'Merchant' ? '/' : '/admin/dashboard';
+  return NextResponse.redirect(new URL(redirectUrl, request.url));
+}

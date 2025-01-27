@@ -37,7 +37,7 @@
     --gray-1000: 0 0 0;
 
     /* body style */
-    --background: 255 255 255; /* #ffffff */
+    --background: 249 249 249; /* #ffffff */
     --foreground: 72 72 72; /* #484848 */
     --muted: 227 227 227; /* #e3e3e3 */
     --muted-foreground: 146 146 146; /* #929292 */
@@ -45,10 +45,14 @@
     /* ----------------------------------- */
     /* primary/brand colors */
     /* ----------------------------------- */
-    --primary-lighter: 227 227 227; /* #e3e3e3 */
-    --primary-default: 17 17 17; /* #111111 */
-    --primary-dark: 0 0 0; /* #000000 */
+    --primary-lighter: 15 150 193; /* #e3e3e3 */
+    --primary-default: 8 110 142; /* #111111 */
+    --primary-dark: 15 150 193; /* #000000 */
     --primary-foreground: 255 255 255; /* #ffffff */
+
+    /* rgba(15, 150, 193, 1) */
+
+    /* rgba(8, 110, 142, 1) */
 
     /* ----------------------------------- */
     /* secondary colors */

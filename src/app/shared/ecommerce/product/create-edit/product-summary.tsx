@@ -103,7 +103,7 @@ export default function ProductSummary({
         {...register('productName')}
         error={errors.productName?.message as string}
         type="text"
-        autoComplete='off'
+        autoComplete="off"
       />
       {!editMode && (
         <SelectComponent
@@ -135,7 +135,7 @@ export default function ProductSummary({
         {...register('productCode')}
         error={errors.productCode?.message as string}
         type="text"
-        autoComplete='off'
+        autoComplete="off"
       />
       <SelectComponent
         labelText="Brand"
@@ -172,7 +172,6 @@ export const SelectComponent = ({
         }`}
         {...register}
         id={labelText}
-        
       >
         <option
           className="font-gray-200 block w-full text-left text-sm text-muted-foreground"
