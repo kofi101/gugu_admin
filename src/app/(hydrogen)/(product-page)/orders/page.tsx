@@ -26,6 +26,12 @@ export type MerchantOrders = {
   statusDescription: string;
 };
 
+export type OrderStatus = Array<{
+  id: number;
+  name: string;
+  displayName: string;
+}>;
+
 export const metadata = {
   ...metaObject('Orders'),
 };
@@ -133,11 +139,23 @@ export default async function OrdersPage() {
     },
   };
 
+  const statusRes = await await fetch(
+    `${baseUrl}/Orders/OrderStatus`,
+    fetchOptions
+  );
+
+  const statusData: OrderStatus = await statusRes.json();
+
   const ordersRes = await fetch(
     `${merchantUrl}/TotalOrders/${userId}`,
     fetchOptions
   );
   const allOrders: Array<MerchantOrders> = await ordersRes.json();
+
+  const mappedStatus = statusData?.map((data) => ({
+    label: data.displayName,
+    value: data.name,
+  }));
 
   const mappedOrders = dummyData?.map((order) => ({
     id: order.checkOutOrderNumber,
@@ -149,7 +167,7 @@ export default async function OrdersPage() {
     price: order.salesPrice,
     status: order.statusDescription,
     createdAt: order.transactionDate,
-    updatedAt: order.address,
+    address: order.address,
   }));
 
   return (
@@ -159,7 +177,7 @@ export default async function OrdersPage() {
         breadcrumb={pageHeader.breadcrumb}
       ></PageHeader>
 
-      <OrdersTable data={mappedOrders} />
+      <OrdersTable data={mappedOrders} status={mappedStatus} />
     </>
   );
 }

@@ -43,7 +43,7 @@ export default function PriceField({
       </Text>
       <div className="flex items-center">
         <Input
-          prefix={'$'}
+          prefix={'GHC'}
           inputClassName="w-24 h-9"
           type="number"
           placeholder="0.00"
@@ -53,7 +53,7 @@ export default function PriceField({
         />
         <Text as="span" className="mx-1.5 h-0.5 w-3 bg-gray-200" />
         <Input
-          prefix={'$'}
+          prefix={'GHC'}
           min={Number(minPrice)}
           inputClassName="w-24 h-9"
           type="number"

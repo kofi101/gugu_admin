@@ -10,7 +10,7 @@ import {
   shippingAddressAtom,
 } from '@/store/checkout';
 import OrderViewProducts from './order-products/order-view-products';
-import { useCart } from '@/store/quick-cart/cart.context';
+// import { useCart } from '@/store/quick-cart/cart.context';
 import { Title, Text } from '@/components/ui/text';
 import { toCurrency } from '@/utils/to-currency';
 import { formatDate } from '@/utils/format-date';
@@ -89,18 +89,18 @@ function WidgetCard({
 }
 
 export default function OrderView() {
-  const { items, total, totalItems } = useCart();
-  const { price: subtotal } = usePrice(
-    items && {
-      amount: total,
-    }
-  );
-  const { price: totalPrice } = usePrice({
-    amount: total,
-  });
-  const orderNote = useAtomValue(orderNoteAtom);
-  const billingAddress = useAtomValue(billingAddressAtom);
-  const shippingAddress = useAtomValue(shippingAddressAtom);
+  // const { items, total, totalItems } = useCart();
+  // const { price: subtotal } = usePrice(
+  //   items && {
+  //     amount: total,
+  //   }
+  // );
+  // const { price: totalPrice } = usePrice({
+  //   amount: total,
+  // });
+  // const orderNote = useAtomValue(orderNoteAtom);
+  // const billingAddress = useAtomValue(billingAddressAtom);
+  // const shippingAddress = useAtomValue(shippingAddressAtom);
   return (
     <div className="@container">
       <div className="flex flex-wrap justify-center border-b border-t border-gray-300 py-4 font-medium text-gray-700 @5xl:justify-start">
@@ -110,10 +110,10 @@ export default function OrderView() {
           {formatDate(new Date(), 'h:mm A')}
         </span>
         <span className="my-2 border-r border-muted px-5 py-0.5 first:ps-0 last:border-r-0">
-          {totalItems} Items
+          {/* {totalItems} Items */}
         </span>
         <span className="my-2 border-r border-muted px-5 py-0.5 first:ps-0 last:border-r-0">
-          Total {totalPrice}
+          {/* Total {totalPrice} */}
         </span>
         <span className="my-2 ms-5 rounded-3xl border-r border-muted bg-green-lighter px-2.5 py-1 text-xs text-green-dark first:ps-0 last:border-r-0">
           Paid
@@ -121,7 +121,7 @@ export default function OrderView() {
       </div>
       <div className="items-start pt-10 @5xl:grid @5xl:grid-cols-12 @5xl:gap-7 @6xl:grid-cols-10 @7xl:gap-10">
         <div className="space-y-7 @5xl:col-span-8 @5xl:space-y-10 @6xl:col-span-7">
-          {orderNote && (
+          {/* {orderNote && (
             <div className="">
               <span className="mb-1.5 block text-sm font-medium text-gray-700">
                 Notes About Order
@@ -130,14 +130,14 @@ export default function OrderView() {
                 {orderNote}
               </div>
             </div>
-          )}
+          )} */}
 
           <div className="pb-5">
             <OrderViewProducts />
             <div className="border-t border-muted pt-7 @5xl:mt-3">
               <div className="ms-auto max-w-lg space-y-6">
                 <div className="flex justify-between font-medium">
-                  Subtotal <span>{subtotal}</span>
+                  {/* Subtotal <span>{subtotal}</span> */}
                 </div>
                 <div className="flex justify-between font-medium">
                   Store Credit <span>{toCurrency(0)}</span>
@@ -146,7 +146,7 @@ export default function OrderView() {
                   Subtotal <span>{toCurrency(0)}</span>
                 </div>
                 <div className="flex justify-between border-t border-muted pt-5 text-base font-semibold">
-                  Total <span>{totalPrice}</span>
+                  {/* Total <span>{totalPrice}</span> */}
                 </div>
               </div>
             </div>
@@ -279,7 +279,7 @@ export default function OrderView() {
             title="Shipping Address"
             childrenWrapperClass="@5xl:py-6 py-5"
           >
-            <Title
+            {/* <Title
               as="h3"
               className="mb-2.5 text-base font-semibold @7xl:text-lg"
             >
@@ -289,9 +289,9 @@ export default function OrderView() {
               {billingAddress?.street}, {billingAddress?.city},{' '}
               {billingAddress?.state}, {billingAddress?.zip},{' '}
               {billingAddress?.country}
-            </Text>
+            </Text> */}
           </WidgetCard>
-          {!isEmpty(shippingAddress) && (
+          {/* {!isEmpty(shippingAddress) && (
             <WidgetCard
               title="Billing Address"
               childrenWrapperClass="@5xl:py-6 py-5"
@@ -308,7 +308,7 @@ export default function OrderView() {
                 {shippingAddress?.country}
               </Text>
             </WidgetCard>
-          )}
+          )} */}
         </div>
       </div>
     </div>

@@ -65,10 +65,10 @@ const columns = [
 ];
 
 export default function OrderViewProducts() {
-  const { items } = useCart();
+  // const { items } = useCart();
   return (
     <Table
-      data={items}
+      // data={items}
       // @ts-ignore
       columns={columns}
       className="text-sm"

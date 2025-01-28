@@ -11,30 +11,17 @@ import { Button } from '@/components/ui/button';
 import { getDateRangeStateValues } from '@/utils/get-formatted-date';
 import { useMedia } from '@/hooks/use-media';
 
-const statusOptions = [
-  {
-    value: 'completed',
-    label: 'Completed',
-  },
-  {
-    value: 'pending',
-    label: 'Pending',
-  },
-  {
-    value: 'cancelled',
-    label: 'Cancelled',
-  },
-  {
-    value: 'refunded',
-    label: 'Refunded',
-  },
-];
+type StatusOptions = Array<{
+  value: string;
+  label: string;
+}>;
 
 type FilterElementProps = {
   isFiltered: boolean;
   filters: { [key: string]: any };
   updateFilter: (columnId: string, filterValue: string | any[]) => void;
   handleReset: () => void;
+  status: StatusOptions;
 };
 
 export default function FilterElement({
@@ -42,6 +29,7 @@ export default function FilterElement({
   filters,
   updateFilter,
   handleReset,
+  status,
 }: FilterElementProps) {
   const isMediumScreen = useMedia('(max-width: 1860px)', false);
   return (
@@ -66,23 +54,9 @@ export default function FilterElement({
           },
         })}
       />
-      <DateFiled
-        selected={getDateRangeStateValues(filters['updatedAt'][0])}
-        startDate={getDateRangeStateValues(filters['updatedAt'][0])}
-        endDate={getDateRangeStateValues(filters['updatedAt'][1])}
-        onChange={(date: any) => {
-          updateFilter('updatedAt', date);
-        }}
-        placeholderText="Select modified date"
-        {...(isMediumScreen && {
-          inputProps: {
-            label: 'Due Date',
-            labelClassName: 'font-medium text-gray-700',
-          },
-        })}
-      />
+
       <StatusField
-        options={statusOptions}
+        options={status}
         value={filters['status']}
         onChange={(value: string) => {
           updateFilter('status', value);

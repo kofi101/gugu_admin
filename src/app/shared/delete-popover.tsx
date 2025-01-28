@@ -7,6 +7,8 @@ import { Popover } from '@/components/ui/popover';
 import TrashIcon from '@/components/icons/trash';
 import { PiTrashFill } from 'react-icons/pi';
 
+import { FaRegFileArchive } from 'react-icons/fa';
+
 type DeletePopoverProps = {
   title: string;
   description: string;
@@ -24,10 +26,10 @@ export default function DeletePopover({
         <ActionIcon
           size="sm"
           variant="outline"
-          aria-label={'Delete Item'}
+          aria-label={'Archive Item'}
           className="cursor-pointer hover:!border-gray-900 hover:text-gray-700"
         >
-          <TrashIcon className="h-4 w-4 text-red-500" />
+          <FaRegFileArchive className="h-4 w-4 text-red-500" />
         </ActionIcon>
       </Popover.Trigger>
       <Popover.Content>
@@ -37,7 +39,7 @@ export default function DeletePopover({
               as="h6"
               className="mb-0.5 flex items-start text-sm text-gray-700 sm:items-center"
             >
-              <PiTrashFill className="me-1 h-[17px] w-[17px]" /> {title}
+              <FaRegFileArchive className="me-1 h-[17px] w-[17px]" /> {title}
             </Title>
             <Text className="mb-2 leading-relaxed text-gray-500">
               {description}

@@ -177,13 +177,6 @@ export default function TableFilter({
               : 'Filters'}
           </Button>
         ) : null}
-
-        <ToggleColumns
-          columns={columns}
-          checkedColumns={checkedColumns}
-          setCheckedColumns={setCheckedColumns}
-          hideIndex={hideIndex}
-        />
       </div>
     </div>
   );
