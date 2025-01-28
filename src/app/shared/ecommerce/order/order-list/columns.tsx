@@ -125,18 +125,20 @@ export const getColumns = ({
   {
     title: (
       <HeaderCell
-        title="Modified"
+        title="Address"
         sortable
         ascending={
-          sortConfig?.direction === 'asc' && sortConfig?.key === 'updatedAt'
+          sortConfig?.direction === 'asc' && sortConfig?.key === 'address'
         }
       />
     ),
-    onHeaderCell: () => onHeaderCellClick('updatedAt'),
-    dataIndex: 'updatedAt',
-    key: 'updatedAt',
+    onHeaderCell: () => onHeaderCellClick('address'),
+    dataIndex: 'address',
+    key: 'address',
     width: 200,
-    render: (value: Date) => <DateCell date={value} />,
+    render: (value: string) => (
+      <Text className="font-medium text-gray-700">{value}</Text>
+    ),
   },
   {
     title: <HeaderCell title="Status" />,
@@ -159,7 +161,7 @@ export const getColumns = ({
           placement="top"
           color="invert"
         >
-          <Link href={routes.eCommerce.editOrder(row.id)}>
+          <Link href={`/orders/${row.id}`}>
             <ActionIcon
               as="span"
               size="sm"
@@ -176,7 +178,7 @@ export const getColumns = ({
           placement="top"
           color="invert"
         >
-          <Link href={routes.eCommerce.orderDetails(row.id)}>
+          <Link href={`/orders/${row.id}`}>
             <ActionIcon
               as="span"
               size="sm"
