@@ -34,6 +34,6 @@
     "**/*.cjs",
     "**/*.mjs",
     ".next/types/**/*.ts"
-  ],
+, "src/app/(hydrogen)/(product-page)/orders/[id]"  ],
   "exclude": ["node_modules"]
 }

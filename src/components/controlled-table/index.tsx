@@ -70,12 +70,12 @@ export default function ControlledTable({
         {tableFooter ? tableFooter : null}
       </div>
 
-      {!isEmpty(paginatorOptions) && (
+      {/* {!isEmpty(paginatorOptions) && (
         <TablePagination
           paginatorClassName={paginatorClassName}
           {...paginatorOptions}
         />
-      )}
+      )} */}
     </>
   );
 }

@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 
 export function formatDate(
-  date?: Date,
+  date?: string,
   format: string = 'DD MMM, YYYY'
 ): string {
   if (!date) return '';

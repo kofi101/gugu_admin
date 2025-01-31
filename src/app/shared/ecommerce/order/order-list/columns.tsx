@@ -166,7 +166,7 @@ export const getColumns = ({
           placement="top"
           color="invert"
         >
-          <Link href={`/orders/${row.id}`}>
+          <Link href={`/orders/${row.id}-${row.customerId}`}>
             <ActionIcon
               as="span"
               size="sm"
