@@ -1,18 +1,55 @@
-
-import GoalAccomplished from '@/app/shared/analytics-dashboard/goal-accomplished';
+import GoalAccomplished, {
+  OrderMetrics,
+} from '@/app/shared/analytics-dashboard/goal-accomplished';
 import StatCards from '@/app/shared/analytics-dashboard/stat-cards';
 import TopTrafficSource from '@/app/shared/analytics-dashboard/top-traffic-source';
 
+export type DashboardDataType = {
+  totalOrders: number;
+  totalOrdersPlaced: number;
+  totalProductsDelivered: number;
+  totalSales: number;
+  totalSalesByOrder: TotalSalesByOrder[];
+  pendingOrders: number;
+  topSellingProducts: TopSellingProduct[];
+};
 
-export default function MerchantAnalytics() {
+export type TotalSalesByOrder = {
+  checkOutOrderNumber: string;
+  salesAmount: number;
+  statusDescription: string;
+};
+
+export type TopSellingProduct = {
+  productCategory: string;
+  brandName: string;
+  productId: number;
+  productCode: string;
+  productName: string;
+  highCount: number;
+};
+
+export default function MerchantAnalytics({
+  salesData,
+  dashboardData,
+}: {
+  salesData: Array<any>;
+  dashboardData: DashboardDataType;
+}) {
   return (
     <div className="@container">
       <div className="grid grid-cols-1 gap-6 @4xl:grid-cols-2 @7xl:grid-cols-12 3xl:gap-8">
-        <StatCards className="grid-cols-1 @xl:grid-cols-2 @4xl:col-span-2 @6xl:grid-cols-4 @7xl:col-span-12" />
-
         <TopTrafficSource className="@7xl:col-span-4 3xl:col-span-6" />
+        {/* <GoalAccomplished
+          dashboardData={dashboardData}
+          className="@7xl:col-span-4 3xl:col-span-6"
+        /> */}
 
-        <GoalAccomplished className="@7xl:col-span-4 3xl:col-span-6" />
+<OrderMetrics className='' />
+        <StatCards
+          metrics={salesData}
+          className="grid-cols-1 overflow-x-auto @xl:grid-cols-2 @4xl:col-span-2 @6xl:grid-cols-4 @7xl:col-span-12"
+        />
       </div>
     </div>
   );

@@ -2,6 +2,7 @@ import { Title, Text } from '@/components/ui/text';
 import WidgetCard from '@/components/cards/widget-card';
 import CircleProgressBar from '@/components/charts/circle-progressbar';
 import cn from '@/utils/class-names';
+import { DashboardDataType } from './merchant-analytics';
 
 const data = [
   {
@@ -25,9 +26,11 @@ const data = [
 ];
 
 export default function GoalAccomplished({
+  dashboardData,
   className,
 }: {
   className?: string;
+  dashboardData: DashboardDataType;
 }) {
   return (
     <WidgetCard
@@ -59,3 +62,62 @@ export default function GoalAccomplished({
     </WidgetCard>
   );
 }
+
+
+export const OrderMetrics = ({
+  orderData,
+  className,
+}: {
+  className: string;
+  orderData: DashboardDataType;
+}) => {
+  return (
+    <WidgetCard
+      title={'Order Details'}
+      description={`${Math.round(
+        (orderData?.pendingOrders / orderData?.totalOrders) * 100
+      )}% orders pending`}
+      rounded="lg"
+      descriptionClassName="text-gray-500 mt-1.5"
+      className={cn('grid', className)}
+    >
+      <div className="mt-5 grid w-full grid-cols-3 justify-around gap-6 @sm:py-3 @md:mt-3 @xl:mt-4 @7xl:gap-8">
+        <div className="grid w-full grid-cols-1 place-items-center gap-6 text-center">
+          <div className=" grid h-28 w-28 place-items-center rounded-full border-4 border-primary md:h-36 md:w-36">
+            <Text className="text-xs font-semibold text-gray-900 @md:text-sm @7xl:text-base dark:text-gray-700">
+              {orderData?.totalOrders}
+            </Text>
+          </div>
+
+          <Text className="text-xs font-semibold text-gray-900 @md:text-sm @7xl:text-base dark:text-gray-700">
+            Total Orders
+          </Text>
+        </div>
+
+        <div className="grid w-full grid-cols-1 place-items-center gap-6 text-center">
+          <div className=" grid h-28 w-28 place-items-center rounded-full border-4 border-primary md:h-36 md:w-36">
+            <Text className="text-xs font-semibold text-gray-900 @md:text-sm @7xl:text-base dark:text-gray-700">
+              {orderData?.pendingOrders}
+            </Text>
+          </div>
+
+          <Text className="text-xs font-semibold text-gray-900 @md:text-sm @7xl:text-base dark:text-gray-700">
+            Pending Orders
+          </Text>
+        </div>
+
+        <div className="grid w-full grid-cols-1 place-items-center gap-6 text-center">
+          <div className=" grid h-28 w-28 place-items-center rounded-full border-4 border-primary md:h-36 md:w-36">
+            <Text className="text-xs font-semibold text-gray-900 @md:text-sm @7xl:text-base dark:text-gray-700">
+              {orderData?.totalProductsDelivered}
+            </Text>
+          </div>
+
+          <Text className="text-xs font-semibold text-gray-900 @md:text-sm @7xl:text-base dark:text-gray-700">
+            Total Products Delivered
+          </Text>
+        </div>
+      </div>
+    </WidgetCard>
+  );
+};
