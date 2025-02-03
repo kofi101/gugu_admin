@@ -1,14 +1,11 @@
 import React from 'react';
+import NextLink from 'next/link';
 
 import MerchantAnalytics from '@/app/shared/analytics-dashboard/merchant-analytics';
 
-import Image from 'next/image';
-import WelcomeBanner from '@/components/banners/welcome';
-
-import welcomeImg from '@public/landing.png';
-import HandWaveIcon from '@/components/icons/hand-wave';
 import { cookies } from 'next/headers';
-import { baseUrl, merchantUrl } from '@/config/base-url';
+import { merchantUrl } from '@/config/base-url';
+import { FaArrowRightLong } from 'react-icons/fa6';
 
 export default async function HomePageComponent() {
   let topProducts;
@@ -47,10 +44,6 @@ export default async function HomePageComponent() {
     console.error('Error while fetching dashboard data', error);
   }
 
-  console.log({ topProducts });
-  console.log({ dashboardData });
-  console.log({ salesData });
-
   return (
     <div className="@container">
       <div className="grid grid-cols-1 gap-6 @4xl:grid-cols-2 @7xl:grid-cols-12 3xl:gap-8">
@@ -61,12 +54,28 @@ export default async function HomePageComponent() {
             Welcome to Your Shop – Manage, Track, and Grow Your Business with
             Ease!
           </p>
+
+          <div className="mt-20">
+            <p className="mb-10 font-semibold">
+              Total Sales{' '}
+              <span className="font-bold">
+                GHC: {dashboardData?.totalSales}
+              </span>
+            </p>
+
+            <NextLink
+              className="flex w-fit items-center gap-2 border-b-2 border-b-black font-semibold transition-all hover:gap-6 "
+              href={'/orders'}
+            >
+              Go to Orders <FaArrowRightLong size={24} />
+            </NextLink>
+          </div>
         </div>
         <div className="w-full rounded-lg p-6 shadow">
           <h2 className="mb-4 text-lg font-semibold">Top Selling Products</h2>
 
           <ul className="h-60 space-y-3 overflow-y-auto">
-            {topSellingProducts.map((product) => (
+            {topProducts?.map((product) => (
               <li
                 key={product.productId}
                 className="flex items-center justify-between rounded-md border p-3"
@@ -108,46 +117,3 @@ function greetUser() {
     return 'Good evening!';
   }
 }
-
-const topSellingProducts = [
-  {
-    productCategory: 'Watches',
-    brandName: 'Rolex',
-    productId: 101,
-    productCode: 'RX-001',
-    productName: 'Rolex Submariner',
-    highCount: 120,
-  },
-  {
-    productCategory: 'Shoes',
-    brandName: 'Nike',
-    productId: 102,
-    productCode: 'NK-002',
-    productName: 'Nike Air Max',
-    highCount: 95,
-  },
-  {
-    productCategory: 'Electronics',
-    brandName: 'Apple',
-    productId: 103,
-    productCode: 'APL-003',
-    productName: 'iPhone 15 Pro',
-    highCount: 85,
-  },
-  {
-    productCategory: 'Accessories',
-    brandName: 'Ray-Ban',
-    productId: 104,
-    productCode: 'RB-004',
-    productName: 'Ray-Ban Aviator',
-    highCount: 75,
-  },
-  {
-    productCategory: 'Bags',
-    brandName: 'Gucci',
-    productId: 105,
-    productCode: 'GC-005',
-    productName: 'Gucci Leather Bag',
-    highCount: 60,
-  },
-];

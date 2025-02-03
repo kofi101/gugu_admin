@@ -63,7 +63,6 @@ export default function GoalAccomplished({
   );
 }
 
-
 export const OrderMetrics = ({
   orderData,
   className,
@@ -74,9 +73,10 @@ export const OrderMetrics = ({
   return (
     <WidgetCard
       title={'Order Details'}
-      description={`${Math.round(
-        (orderData?.pendingOrders / orderData?.totalOrders) * 100
-      )}% orders pending`}
+      description={`${
+        Math.round((orderData?.pendingOrders / orderData?.totalOrders) * 100) ||
+        0
+      }% orders pending`}
       rounded="lg"
       descriptionClassName="text-gray-500 mt-1.5"
       className={cn('grid', className)}
