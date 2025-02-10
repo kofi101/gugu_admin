@@ -12,10 +12,9 @@ export default async function HomePageComponent() {
   let dashboardData;
   let salesData;
 
+  const token = cookies()?.get('token');
+  const userId = cookies()?.get('userId');
   try {
-    const token = cookies()?.get('token');
-    const userId = cookies()?.get('userId');
-
     if (!token || !userId) {
       throw new Error('Unauthorized: Missing token or userId.');
     }

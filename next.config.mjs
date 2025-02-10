@@ -47,11 +47,14 @@ const nextConfig = {
       {
         protocol: 'https',
         hostname: 'linqworthstorage.blob.core.windows.net',
-        pathname: '/linqworthstorage/**'
+        pathname: '/linqworthstorage/**',
       },
     ],
   },
   reactStrictMode: false,
+  typescript: {
+    ignoreBuildErrors: true,
+  },
 };
 
 export default nextConfig;

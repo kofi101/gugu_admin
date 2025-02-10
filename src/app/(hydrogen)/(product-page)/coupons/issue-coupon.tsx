@@ -11,7 +11,7 @@ import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import toast from 'react-hot-toast';
 import { MdOutlineClose } from 'react-icons/md';
-import { Unauthorized } from '../products/configs/page';
+import { Unauthorized } from '../products/configs/config';
 import { SpinnerLoader } from '@/components/ui/spinner';
 import { SelectComponent } from '@/app/shared/ecommerce/product/create-edit/product-summary';
 

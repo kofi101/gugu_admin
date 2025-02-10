@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import toast from 'react-hot-toast';
 import { MdOutlineClose } from 'react-icons/md';
-import { Unauthorized } from '../products/configs/page';
+import { Unauthorized } from '../products/configs/config';
 import { BsThreeDotsVertical } from 'react-icons/bs';
 import { IssueCouponToUser } from './issue-coupon';
 import { ReActivateCoupon, DeactivateCoupon } from './deactivate';

@@ -2,7 +2,7 @@ import React from 'react';
 
 import Image from 'next/image';
 import WelcomeBanner from '@/components/banners/welcome';
-import AdminImage from '@public/admin.jpg';
+// import AdminImage from '@public/admin.jpg';
 
 export default function HomePageComponent() {
   return (
@@ -16,11 +16,11 @@ export default function HomePageComponent() {
           media={
             <div className="end-4 hidden w-[300px] @2xl:block lg:w-[320px] 2xl:w-[330px]">
               <div className="relative">
-                <Image
+                {/* <Image
                   src={AdminImage}
                   alt="Welcome shop image "
                   className="dark:brightness-95 dark:drop-shadow-md"
-                />
+                /> */}
               </div>
             </div>
           }

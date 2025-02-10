@@ -72,7 +72,7 @@ export const ProductConfig = ({
 
       <div className="h-64 overflow-auto">
         {[1, 1, 1, 1, 1].map((i, index) => (
-          <ListConfigDetails />
+          <ListConfigDetails key={i}/>
         ))}
       </div>
     </div>

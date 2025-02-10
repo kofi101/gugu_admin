@@ -8,7 +8,7 @@ import { managementUrl } from '@/config/base-url';
 import { Modal, ActionIcon } from 'rizzui';
 import { MdOutlineClose, MdOutlineEdit } from 'react-icons/md';
 import { getUserToken } from '@/utils/get-token';
-import { Unauthorized } from '../../(product-page)/products/configs/page';
+import { Unauthorized } from '../../(product-page)/products/configs/config';
 import { DeleteComponent } from '../../delete/delete';
 import { fetchUtil } from '@/utils/fetch';
 

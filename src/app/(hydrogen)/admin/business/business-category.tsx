@@ -11,7 +11,7 @@ import { useForm } from 'react-hook-form';
 import { fetchUtil } from '@/utils/fetch';
 import { managementUrl } from '@/config/base-url';
 import { getUserToken } from '@/utils/get-token';
-import { Unauthorized } from '../../(product-page)/products/configs/page';
+import { Unauthorized } from '../../(product-page)/products/configs/config';
 import { SpinnerLoader } from '@/components/ui/spinner';
 import { DeleteComponent } from '../../delete/delete';
 

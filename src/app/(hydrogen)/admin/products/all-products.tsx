@@ -21,7 +21,7 @@ import { managementUrl } from '@/config/base-url';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import { getUserToken } from '@/utils/get-token';
-import { Unauthorized } from '../../(product-page)/products/configs/page';
+import { Unauthorized } from '../../(product-page)/products/configs/config';
 
 export type Product = {
   productId: number;
