@@ -28,11 +28,11 @@ export async function POST(request: NextRequest, response: NextResponse) {
     cookies().set('userType', dbToken?.userType, { secure: true });
     cookies().set('userId', reqData?.userId, { secure: true });
 
-    const authorization = headers().get('Authorization');
+    const authorization = headers()?.get('Authorization');
 
     if (authorization?.startsWith('Bearer ')) {
       const idToken = authorization.split('Bearer ')[1];
-      const decodedToken = await auth().verifyIdToken(idToken);
+      const decodedToken = await auth()?.verifyIdToken(idToken);
 
       if (!decodedToken) {
         return NextResponse.json({
