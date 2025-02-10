@@ -1,47 +1,104 @@
 import React from 'react';
+import NextLink from 'next/link';
 
 import MerchantAnalytics from '@/app/shared/analytics-dashboard/merchant-analytics';
 
-import Image from 'next/image';
-import WelcomeBanner from '@/components/banners/welcome';
+import { cookies } from 'next/headers';
+import { merchantUrl } from '@/config/base-url';
+import { FaArrowRightLong } from 'react-icons/fa6';
 
-import welcomeImg from '@public/landing.png';
-import HandWaveIcon from '@/components/icons/hand-wave';
+export default async function HomePageComponent() {
+  let topProducts;
+  let dashboardData;
+  let salesData;
 
-export default function HomePageComponent() {
+  const token = cookies()?.get('token');
+  const userId = cookies()?.get('userId');
+  try {
+    if (!token || !userId) {
+      throw new Error('Unauthorized: Missing token or userId.');
+    }
+
+    const fetchOptions = {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    };
+
+    const [topProductRes, dashboardRes, salesRes] = await Promise.all([
+      fetch(`${merchantUrl}/TopSellingProducts/${userId}`, fetchOptions),
+      fetch(`${merchantUrl}/DashboardData/${userId}`, fetchOptions),
+      fetch(`${merchantUrl}/TotalSales/${userId}`, fetchOptions),
+    ]);
+
+    if (!topProductRes.ok || !dashboardRes.ok || !salesRes.ok) {
+      throw new Error('Failed to fetch dashboard data.');
+    }
+
+    topProducts = await topProductRes.json();
+    dashboardData = await dashboardRes.json();
+    salesData = await salesRes.json();
+  } catch (error) {
+    console.error('Error while fetching dashboard data', error);
+  }
+
   return (
     <div className="@container">
       <div className="grid grid-cols-1 gap-6 @4xl:grid-cols-2 @7xl:grid-cols-12 3xl:gap-8">
-        <WelcomeBanner
-          title={
-            <>
-              {greetUser()}
-              <br />
-              <HandWaveIcon className="inline-flex h-8 w-8" />
-            </>
-          }
-          description={'Here’s What happening on your store today.'}
-          media={
-            <div className="absolute -bottom-6 end-4 hidden w-[300px] @2xl:block lg:w-[320px] 2xl:-bottom-7 2xl:w-[330px]">
-              <div className="relative">
-                {/* <Image
-                  src={welcomeImg}
-                  alt="Welcome shop image "
-                  // fill
-                  width={500}
-                  height={200}
-                  className="object-cover dark:brightness-95 dark:drop-shadow-md"
-                /> */}
-              </div>
-            </div>
-          }
-          contentClassName="@2xl:max-w-[calc(100%-340px)]"
-          className="border border-muted bg-gray-0 pb-8 @4xl:col-span-2 @7xl:col-span-8 lg:h-72 lg:pb-9 dark:bg-gray-100/30"
-        ></WelcomeBanner>
+        <div className="w-full rounded-lg p-6 shadow">
+          <h2 className="flex gap-3">{greetUser()}</h2>
+
+          <p className="mt-10">
+            Welcome to Your Shop – Manage, Track, and Grow Your Business with
+            Ease!
+          </p>
+
+          <div className="mt-20">
+            <p className="mb-10 font-semibold">
+              Total Sales{' '}
+              <span className="font-bold">
+                GHC: {dashboardData?.totalSales}
+              </span>
+            </p>
+
+            <NextLink
+              className="flex w-fit items-center gap-2 border-b-2 border-b-black font-semibold transition-all hover:gap-6 "
+              href={'/orders'}
+            >
+              Go to Orders <FaArrowRightLong size={24} />
+            </NextLink>
+          </div>
+        </div>
+        <div className="w-full rounded-lg p-6 shadow">
+          <h2 className="mb-4 text-lg font-semibold">Top Selling Products</h2>
+
+          <ul className="h-60 space-y-3 overflow-y-auto">
+            {topProducts?.map((product) => (
+              <li
+                key={product.productId}
+                className="flex items-center justify-between rounded-md border p-3"
+              >
+                <div>
+                  <h3 className="text-sm font-medium">{product.productName}</h3>
+                  <p className="text-xs text-gray-500">
+                    {product.brandName} - {product.productCategory}
+                  </p>
+                </div>
+                <span className="text-sm font-semibold text-green-600">
+                  {product.highCount} Sold
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
 
       <div className="mt-16">
-        <MerchantAnalytics />
+        <MerchantAnalytics
+          dashboardData={dashboardData}
+          salesData={salesData}
+        />
       </div>
     </div>
   );

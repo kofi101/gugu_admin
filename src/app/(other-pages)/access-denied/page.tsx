@@ -1,8 +1,8 @@
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Title } from '@/components/ui/text';
-import ForbiddenImg from '@public/403img.svg';
-import ForbiddenTwoImg from '@public/forbidden-two.png';
+// import ForbiddenImg from '@public/403img.svg';
+// import ForbiddenTwoImg from '@public/forbidden-two.png';
 import { PiHouseLineBold } from 'react-icons/pi';
 import Link from 'next/link';
 
@@ -11,16 +11,16 @@ export default function AccessDeniedPage() {
     <div className="flex grow items-center px-6 xl:px-10">
       <div className="mx-auto text-center">
         <div className="relative mx-auto max-w-[370px]">
-          <Image
+          {/* <Image
             src={ForbiddenImg}
             alt="forbidden"
             className="mx-auto mb-8 aspect-[360/326] max-w-[256px] xs:max-w-[370px] lg:mb-12 2xl:mb-16"
-          />
-          <Image
+          /> */}
+          {/* <Image
             src={ForbiddenTwoImg}
             alt="forbidden"
             className="absolute right-10 top-10 aspect-auto max-w-[100px] dark:right-0 dark:top-5 dark:invert "
-          />
+          /> */}
         </div>
         <Title
           as="h1"

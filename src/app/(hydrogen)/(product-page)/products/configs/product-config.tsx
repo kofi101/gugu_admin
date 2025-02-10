@@ -10,7 +10,7 @@ import toast from 'react-hot-toast';
 import { baseUrl, merchantUrl } from '@/config/base-url';
 import { useForm } from 'react-hook-form';
 import { Modal, Text, ActionIcon } from 'rizzui';
-import { Unauthorized } from './page';
+import { Unauthorized } from './config';
 import { getUserToken } from '@/utils/get-token';
 import { fetchUtil } from '@/utils/fetch';
 import { SpinnerLoader } from '@/components/ui/spinner';

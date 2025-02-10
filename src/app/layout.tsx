@@ -6,7 +6,6 @@ import { ThemeProvider } from '@/app/shared/theme-provider';
 import { siteConfig } from '@/config/site.config';
 import { inter, lexendDeca } from '@/app/fonts';
 import cn from '@/utils/class-names';
-import { AuthGuard } from '@/components/AuthWrapper';
 
 const NextProgress = dynamic(() => import('@/components/next-progress'), {
   ssr: false,
@@ -18,7 +17,6 @@ export const metadata = {
   title: siteConfig.title,
   description: siteConfig.description,
 };
-
 
 export default async function RootLayout({
   children,
@@ -37,8 +35,6 @@ export default async function RootLayout({
         suppressHydrationWarning
         className={cn(inter.variable, lexendDeca.variable, 'font-inter')}
       >
-        {/* <AuthProvider session={session}> */}
-        {/* <AuthGuard> */}
         <ThemeProvider>
           <NextProgress />
           {children}
@@ -46,8 +42,6 @@ export default async function RootLayout({
           <GlobalDrawer />
           <GlobalModal />
         </ThemeProvider>
-        {/* </AuthProvider> */}
-        {/* </AuthGuard> */}
       </body>
     </html>
   );

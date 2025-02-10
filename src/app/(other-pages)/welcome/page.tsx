@@ -1,8 +1,8 @@
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Title, Text } from '@/components/ui/text';
-import LaptopImg from '@public/welcome-laptop.png';
-import MobileImg from '@public/welcome-mobile.png';
+// import LaptopImg from '@public/welcome-laptop.png';
+// import MobileImg from '@public/welcome-mobile.png';
 
 export default function WelcomePage() {
   return (
@@ -39,7 +39,7 @@ export default function WelcomePage() {
           </div>
         </div>
         <div className="relative">
-          <Image
+          {/* <Image
             src={LaptopImg}
             alt="coming-soon"
             className="aspect-[632/630] max-w-[256px] sm:max-w-xs lg:max-w-lg 2xl:max-w-xl 3xl:max-w-[632px]"
@@ -48,7 +48,7 @@ export default function WelcomePage() {
             src={MobileImg}
             alt="coming-soon"
             className="absolute left-0 top-1/2 z-10 aspect-[275/390] max-w-[100px] -translate-y-1/2 lg:max-w-[210px]"
-          />
+          /> */}
           <div className="mx-auto h-20 w-32 bg-gray-1000/50 blur-[57px] [transform:rotateX(80deg)]"></div>
           <div className="absolute bottom-10 left-3 mx-auto h-20 w-32 bg-gray-1000/50 blur-[57px] [transform:rotateX(80deg)] lg:left-7"></div>
         </div>

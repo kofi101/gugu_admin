@@ -47,12 +47,17 @@ export default function SignInForm() {
         );
       }
 
+      console.log('res', signInRes.user);
+
       const loginRes = await fetch('/auth/sign-in/api', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${signInRes?.user?.accessToken}`,
         },
-        body: JSON.stringify({ email: data.email }),
+        body: JSON.stringify({
+          email: data.email,
+          userId: signInRes?.user?.uid,
+        }),
       });
 
       if (!loginRes.ok) {
@@ -75,8 +80,6 @@ export default function SignInForm() {
           </Text>{' '}
         </Text>
       );
-
-      console.log(error);
     }
   };
 

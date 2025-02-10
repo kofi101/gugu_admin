@@ -4,11 +4,8 @@ import { useCallback, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useTable } from '@/hooks/use-table';
 import { useColumn } from '@/hooks/use-column';
-import { PiCaretDownBold, PiCaretUpBold } from 'react-icons/pi';
 import ControlledTable from '@/components/controlled-table';
 import { getColumns } from '@/app/shared/ecommerce/order/order-list/columns';
-import { ActionIcon } from '@/components/ui/action-icon';
-import ExpandedOrderRow from '@/app/shared/ecommerce/order/order-list/expanded-row';
 import cn from '@/utils/class-names';
 // dynamic import
 const FilterElement = dynamic(
@@ -16,25 +13,10 @@ const FilterElement = dynamic(
   { ssr: false }
 );
 
-function CustomExpandIcon(props: any) {
-  return (
-    <ActionIcon
-      size="sm"
-      variant="outline"
-      rounded="full"
-      className="expand-row-icon ms-2"
-      onClick={(e) => {
-        props.onExpand(props.record, e);
-      }}
-    >
-      {props.expanded ? (
-        <PiCaretUpBold className="h-3.5 w-3.5" />
-      ) : (
-        <PiCaretDownBold className="h-3.5 w-3.5" />
-      )}
-    </ActionIcon>
-  );
-}
+type OrderStatus = Array<{
+  label: string;
+  value: string;
+}>;
 
 const filterState = {
   price: ['', ''],
@@ -47,10 +29,12 @@ export default function OrderTable({
   data = [],
   variant = 'modern',
   className,
+  status,
 }: {
   data: any[];
   variant?: 'modern' | 'minimal' | 'classic' | 'elegant' | 'retro';
   className?: string;
+  status: OrderStatus;
 }) {
   const [pageSize, setPageSize] = useState(10);
 
@@ -100,10 +84,6 @@ export default function OrderTable({
         data={tableData}
         // @ts-ignore
         columns={visibleColumns}
-        expandable={{
-          expandIcon: CustomExpandIcon,
-          expandedRowRender: (record) => <ExpandedOrderRow record={record} />,
-        }}
         paginatorOptions={{
           pageSize,
           setPageSize,
@@ -132,6 +112,7 @@ export default function OrderTable({
             filters={filters}
             updateFilter={updateFilter}
             handleReset={handleReset}
+            status={status}
           />
         }
         className={

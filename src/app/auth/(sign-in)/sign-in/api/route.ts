@@ -26,6 +26,7 @@ export async function POST(request: NextRequest, response: NextResponse) {
 
     cookies().set('token', dbToken?.token, { secure: true });
     cookies().set('userType', dbToken?.userType, { secure: true });
+    cookies().set('userId', reqData?.userId, { secure: true });
 
     const authorization = headers().get('Authorization');
 

@@ -11,7 +11,7 @@ import { getUserToken } from '@/utils/get-token';
 import { Input } from 'rizzui';
 import { AllOrderTypes } from './page';
 import { format } from 'date-fns';
-import { Unauthorized } from '../../(product-page)/products/configs/page';
+import { Unauthorized } from '../../(product-page)/products/configs/config';
 import { MdClose } from 'react-icons/md';
 
 type OrderStatus = {

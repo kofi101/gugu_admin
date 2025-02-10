@@ -13,7 +13,7 @@ import { Modal, ActionIcon } from 'rizzui';
 import { getUserToken } from '@/utils/get-token';
 import { SpinnerLoader } from '@/components/ui/spinner';
 import { DeleteComponent } from '../../delete/delete';
-import { Unauthorized } from '../../(product-page)/products/configs/page';
+import { Unauthorized } from '../../(product-page)/products/configs/config';
 
 type ProductSubCategory = {
   productSubCategoryId: number;

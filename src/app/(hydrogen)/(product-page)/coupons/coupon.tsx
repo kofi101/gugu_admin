@@ -11,7 +11,7 @@ import { useForm } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import toast from 'react-hot-toast';
-import { Unauthorized } from '../products/configs/page';
+import { Unauthorized } from '../products/configs/config';
 import { SpinnerLoader } from '@/components/ui/spinner';
 import { CouponDetails } from './details';
 

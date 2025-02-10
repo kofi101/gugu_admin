@@ -1,18 +1,18 @@
 'use client';
 
-import React, { useState, useEffect,} from 'react';
+import React, { useState, useEffect } from 'react';
 import { auth } from '@/config/firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { fetchUtil } from '@/utils/fetch';
 import { baseUrl, merchantUrl } from '@/config/base-url';
 import { getUserToken } from '@/utils/get-token';
-import { Modal, Checkbox,Text } from 'rizzui';
-import { useForm,} from 'react-hook-form';
+import { Modal, Checkbox, Text } from 'rizzui';
+import { useForm } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import toast from 'react-hot-toast';
 import { MdOutlineClose } from 'react-icons/md';
-import { Unauthorized } from '../products/configs/page';
+import { Unauthorized } from '../products/configs/config';
 import { SpinnerLoader } from '@/components/ui/spinner';
 
 import { SelectComponent } from '@/app/shared/ecommerce/product/create-edit/product-summary';
@@ -25,7 +25,7 @@ interface ApplyCouponForm {
 }
 
 export const ApplyCoupon = ({ couponCode }: { couponCode: string }) => {
-  const [allProducts, setAllProducts] = useState();
+  const [allProducts, setAllProducts] = useState([]);
   const [view, setView] = useState<'products' | 'category'>('products');
   const [modalState, setModalState] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -46,7 +46,7 @@ export const ApplyCoupon = ({ couponCode }: { couponCode: string }) => {
     };
 
     try {
-      const products: Array<any> = await fetchUtil(productUrl, fetchOptions);
+      const products = await fetchUtil(productUrl, fetchOptions);
       setAllProducts(products);
       setLoading(false);
     } catch (error) {

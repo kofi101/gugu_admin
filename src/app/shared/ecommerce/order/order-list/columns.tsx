@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+import { Modal, Button, Title, Input, Password, Checkbox } from 'rizzui';
 import Link from 'next/link';
 import { HeaderCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +14,8 @@ import PencilIcon from '@/components/icons/pencil';
 import TableAvatar from '@/components/ui/avatar-card';
 import DateCell from '@/components/ui/date-cell';
 import DeletePopover from '@/app/shared/delete-popover';
+import { MdClose } from 'react-icons/md';
+import { CiEdit } from 'react-icons/ci';
 
 function getStatusBadge(status: string) {
   switch (status.toLowerCase()) {
@@ -125,18 +129,20 @@ export const getColumns = ({
   {
     title: (
       <HeaderCell
-        title="Modified"
+        title="Address"
         sortable
         ascending={
-          sortConfig?.direction === 'asc' && sortConfig?.key === 'updatedAt'
+          sortConfig?.direction === 'asc' && sortConfig?.key === 'address'
         }
       />
     ),
-    onHeaderCell: () => onHeaderCellClick('updatedAt'),
-    dataIndex: 'updatedAt',
-    key: 'updatedAt',
+    onHeaderCell: () => onHeaderCellClick('address'),
+    dataIndex: 'address',
+    key: 'address',
     width: 200,
-    render: (value: Date) => <DateCell date={value} />,
+    render: (value: string) => (
+      <Text className="font-medium text-gray-700">{value}</Text>
+    ),
   },
   {
     title: <HeaderCell title="Status" />,
@@ -153,30 +159,14 @@ export const getColumns = ({
     width: 130,
     render: (_: string, row: any) => (
       <div className="flex items-center justify-end gap-3 pe-4">
-        <Tooltip
-          size="sm"
-          content={'Edit Order'}
-          placement="top"
-          color="invert"
-        >
-          <Link href={routes.eCommerce.editOrder(row.id)}>
-            <ActionIcon
-              as="span"
-              size="sm"
-              variant="outline"
-              className="hover:text-gray-700"
-            >
-              <PencilIcon className="h-4 w-4" />
-            </ActionIcon>
-          </Link>
-        </Tooltip>
+        <EditStatus />
         <Tooltip
           size="sm"
           content={'View Order'}
           placement="top"
           color="invert"
         >
-          <Link href={routes.eCommerce.orderDetails(row.id)}>
+          <Link href={`/orders/${row.id}-${row.customerId}`}>
             <ActionIcon
               as="span"
               size="sm"
@@ -188,14 +178,55 @@ export const getColumns = ({
           </Link>
         </Tooltip>
         <DeletePopover
-          title={`Delete the order`}
-          description={`Are you sure you want to delete this #${row.id} order?`}
+          title={`Archive the order`}
+          description={`Are you sure you want to archive this #${row.id} order?`}
           onDelete={() => onDeleteItem(row.id)}
         />
       </div>
     ),
   },
 ];
+
+const EditStatus = () => {
+  const [modalState, setModalState] = useState(false);
+  return (
+    <>
+      <Button
+        size="sm"
+        className="border px-1"
+        variant="text"
+        onClick={() => setModalState(true)}
+      >
+        <CiEdit size={24} />
+      </Button>
+      <Modal isOpen={modalState} onClose={() => setModalState(false)}>
+        <div className="m-auto px-7 pb-8 pt-6">
+          <div className="mb-7 flex items-center justify-between">
+            <Title as="h4">Change Order Status</Title>
+            <ActionIcon
+              size="sm"
+              variant="text"
+              onClick={() => setModalState(false)}
+            >
+              <MdClose size={24} />
+            </ActionIcon>
+          </div>
+          <div className="grid grid-cols-2 gap-x-5 gap-y-6 [&_label>span]:font-medium">
+            <Input label="First Name *" inputClassName="border-2" size="lg" />
+
+            <Button
+              type="submit"
+              className="col-span-2 mt-2"
+              onClick={() => setModalState(false)}
+            >
+              Update Status
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    </>
+  );
+};
 
 export const getWidgetColumns = ({
   sortConfig,
@@ -278,18 +309,20 @@ export const getWidgetColumns = ({
   {
     title: (
       <HeaderCell
-        title="Modified"
-        sortable
-        ascending={
-          sortConfig?.direction === 'asc' && sortConfig?.key === 'updatedAt'
-        }
+        title="Address"
+        // sortable
+        // ascending={
+        //   sortConfig?.direction === 'asc' && sortConfig?.key === 'updatedAt'
+        // }
       />
     ),
-    onHeaderCell: () => onHeaderCellClick('updatedAt'),
-    dataIndex: 'updatedAt',
-    key: 'updatedAt',
+    onHeaderCell: () => onHeaderCellClick('address'),
+    dataIndex: 'address',
+    key: 'address',
     width: 200,
-    render: (value: Date) => <DateCell date={value} />,
+    render: (value: string) => (
+      <Text className="font-medium text-gray-700">${value}</Text>
+    ),
   },
   {
     title: <HeaderCell title="Status" />,

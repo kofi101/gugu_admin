@@ -2,9 +2,7 @@
 
 import Image from 'next/image';
 import Table, { HeaderCell } from '@/components/ui/table';
-import { useCart } from '@/store/quick-cart/cart.context';
 import { Title, Text } from '@/components/ui/text';
-import { toCurrency } from '@/utils/to-currency';
 import { CartItem } from '@/types';
 
 const columns = [
@@ -38,7 +36,7 @@ const columns = [
     key: 'price',
     width: 200,
     render: (price: string) => (
-      <Text className="text-end text-sm">{toCurrency(price)}</Text>
+      <Text className="text-end text-sm">GHC: {price}</Text>
     ),
   },
   {
@@ -57,15 +55,12 @@ const columns = [
     key: 'price',
     width: 200,
     render: (price: number, row: CartItem) => (
-      <Text className="text-end text-sm">
-        {toCurrency(price * row.quantity)}
-      </Text>
+      <Text className="text-end text-sm">GHC: {price * row.quantity}</Text>
     ),
   },
 ];
 
-export default function OrderViewProducts() {
-  const { items } = useCart();
+export default function OrderViewProducts({ items }) {
   return (
     <Table
       data={items}

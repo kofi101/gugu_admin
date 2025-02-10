@@ -13,7 +13,7 @@ import { managementUrl } from '@/config/base-url';
 import { MdOutlineClose, MdOutlineEdit } from 'react-icons/md';
 import { auth } from '@/config/firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { Unauthorized } from '../../(product-page)/products/configs/page';
+import { Unauthorized } from '../../(product-page)/products/configs/config';
 import { DeleteComponent } from '../../delete/delete';
 
 type ShippingOptionType = {
