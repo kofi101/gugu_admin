@@ -5,10 +5,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { baseUrl } from '@/config/base-url';
 
 customInitApp();
-// Sign in
+
 export async function POST(request: NextRequest, response: NextResponse) {
-  const reqData = await request.json();
   try {
+    const reqData = await request.json();
     const dbTokenRes = await fetch(`${baseUrl}/User/GetToken`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
