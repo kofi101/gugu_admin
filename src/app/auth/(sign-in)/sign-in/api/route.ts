@@ -4,7 +4,7 @@ import { cookies, headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { baseUrl } from '@/config/base-url';
 
-customInitApp();
+// customInitApp();
 
 export async function POST(request: NextRequest, response: NextResponse) {
   try {
