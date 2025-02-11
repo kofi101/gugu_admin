@@ -39,7 +39,10 @@ export default function SignInForm() {
         data.password
       );
 
-      if (!signInRes) {
+      const token = signInRes?.user?.accessToken;
+      const userUId = signInRes?.user?.uid;
+
+      if (!token) {
         setLoading(false);
         setReset({ email: '', password: '' });
         return toast.error(
@@ -47,16 +50,14 @@ export default function SignInForm() {
         );
       }
 
-      console.log('res', signInRes.user);
-
       const loginRes = await fetch('/auth/sign-in/api', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${signInRes?.user?.accessToken}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           email: data.email,
-          userId: signInRes?.user?.uid,
+          userId: userUId,
         }),
       });
 

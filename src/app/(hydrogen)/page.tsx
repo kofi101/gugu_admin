@@ -45,7 +45,7 @@ export default async function HomePageComponent() {
 
   return (
     <div className="@container">
-      <div className="grid grid-cols-1 gap-6 @4xl:grid-cols-2 @7xl:grid-cols-12 3xl:gap-8">
+      <div className="grid grid-cols-1 gap-6 @4xl:grid-cols-2 3xl:gap-8">
         <div className="w-full rounded-lg p-6 shadow">
           <h2 className="flex gap-3">{greetUser()}</h2>
 
@@ -72,7 +72,6 @@ export default async function HomePageComponent() {
         </div>
         <div className="w-full rounded-lg p-6 shadow">
           <h2 className="mb-4 text-lg font-semibold">Top Selling Products</h2>
-
           <ul className="h-60 space-y-3 overflow-y-auto">
             {topProducts?.map((product) => (
               <li
