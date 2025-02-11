@@ -44,7 +44,7 @@
     "react-use": "^17.4.2",
     "recharts": "^2.10.3",
     "rizzui": "^0.8.3",
-    "sharp": "^0.33.5",
+    "sharp": "^0.33.1",
     "simplebar-react": "^3.2.4",
     "swiper": "^11.0.5",
     "tailwind-merge": "^2.1.0",
