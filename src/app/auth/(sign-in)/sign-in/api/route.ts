@@ -16,6 +16,9 @@ export async function POST(request: NextRequest, response: NextResponse) {
     if (authorization?.startsWith('Bearer ')) {
       const idToken = authorization.split('Bearer ')[1];
       const decodedToken = await auth()?.verifyIdToken(idToken);
+      
+
+      console.log({ token: decodedToken})
 
       if (!decodedToken) {
         return NextResponse.json({
@@ -76,6 +79,8 @@ export async function GET(request: NextRequest) {
   }
 
   const decodedClaims = await auth().verifySessionCookie(session, true);
+
+  console.log('is session  decoded', decodedClaims);
 
   if (!decodedClaims) {
     return NextResponse.json({ isLogged: false }, { status: 401 });
