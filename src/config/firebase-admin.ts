@@ -1,13 +1,16 @@
-import { initializeApp, getApps, cert } from 'firebase-admin/app';
+import {
+  initializeApp,
+  getApps,
+  cert,
+  ServiceAccount,
+} from 'firebase-admin/app';
 
-const { privateKey } = JSON.parse(process.env.FIREBASE_PRIVATE_KEY);
+const serviceAccount: ServiceAccount = JSON.parse(
+  process.env.FIREBASE_SERVICE_ACCOUNT_KEY as string
+);
 
 const firebaseAdminConfig = {
-  credential: cert({
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    privateKey: privateKey,
-  }),
+  credential: cert(serviceAccount),
 };
 
 export function customInitApp() {

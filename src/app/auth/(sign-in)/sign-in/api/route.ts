@@ -4,32 +4,15 @@ import { cookies, headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { baseUrl } from '@/config/base-url';
 
-// customInitApp();
+customInitApp();
 
 export async function POST(request: NextRequest, response: NextResponse) {
   try {
     const reqData = await request.json();
-    const dbTokenRes = await fetch(`${baseUrl}/User/GetToken`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: reqData?.email }),
-    });
-
-    if (!dbTokenRes.ok) {
-      return NextResponse.json({
-        message: 'Something went wrong',
-        status: 500,
-      });
-    }
-
-    const dbToken = await dbTokenRes.json();
-
-    cookies().set('token', dbToken?.token, { secure: true });
-    cookies().set('userType', dbToken?.userType, { secure: true });
-    cookies().set('userId', reqData?.userId, { secure: true });
 
     const authorization = headers()?.get('Authorization');
 
+    // verify token with firebase
     if (authorization?.startsWith('Bearer ')) {
       const idToken = authorization.split('Bearer ')[1];
       const decodedToken = await auth()?.verifyIdToken(idToken);
@@ -58,6 +41,25 @@ export async function POST(request: NextRequest, response: NextResponse) {
         cookies().set(options);
       }
     }
+
+    const dbTokenRes = await fetch(`${baseUrl}/User/GetToken`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: reqData?.email }),
+    });
+
+    if (!dbTokenRes.ok) {
+      return NextResponse.json({
+        message: 'Something went wrong',
+        status: 500,
+      });
+    }
+
+    const dbToken = await dbTokenRes.json();
+
+    cookies().set('token', dbToken?.token, { secure: true });
+    cookies().set('userType', dbToken?.userType, { secure: true });
+    cookies().set('userId', reqData?.userId, { secure: true });
 
     return NextResponse.json({}, { status: 200 });
   } catch (error) {

@@ -36,12 +36,11 @@ export default function MerchantAnalytics({
 }) {
   return (
     <div className="@container">
-      <div className="grid grid-cols-1 gap-6 @4xl:grid-cols-2 @7xl:grid-cols-12 3xl:gap-8">
-        {/* <TopTrafficSource className="@7xl:col-span-4 3xl:col-span-6" /> */}
+      <div className="grid grid-cols-1 gap-6 @4xl:grid-cols-2 3xl:gap-8">
         <OrderMetrics orderData={dashboardData} className="" />
         <StatCards
           metrics={salesData}
-          className="grid-cols-1 overflow-x-auto @xl:grid-cols-2 @4xl:col-span-2 @6xl:grid-cols-4 @7xl:col-span-12"
+          className="grid-cols-1 overflow-x-auto @xl:grid-cols-2 @4xl:col-span-2"
         />
       </div>
     </div>

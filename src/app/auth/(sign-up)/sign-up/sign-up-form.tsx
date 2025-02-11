@@ -147,7 +147,7 @@ export default function SignUpForm() {
       toast.success(<Text>Account created successfully </Text>);
       setLoading(false);
 
-      router.push('/');
+      router.push('/confirmation');
     } catch (error) {
       setLoading(false);
       console.error(error);
@@ -173,7 +173,7 @@ export default function SignUpForm() {
   };
 
   function handleFileSelection(event: React.ChangeEvent<HTMLInputElement>) {
-    const uploadedFile = (event.target as HTMLInputElement)?.files[0];
+    const uploadedFile = (event?.target as HTMLInputElement)?.files[0];
     if (!isFileTypeAllowed(uploadedFile?.name, documentFileExtensions)) {
       return setFileError('Please select a document');
     }
