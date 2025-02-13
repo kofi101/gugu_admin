@@ -10,15 +10,16 @@ export async function POST(request: NextRequest, response: NextResponse) {
   try {
     const reqData = await request.json();
 
-    const authorization = headers()?.get('Authorization');
+    const authorization = request?.headers?.get('Authorization');
+
+    console.log('Do i get authorization', authorization)
 
     // verify token with firebase
     if (authorization?.startsWith('Bearer ')) {
       const idToken = authorization.split('Bearer ')[1];
       const decodedToken = await auth()?.verifyIdToken(idToken);
-      
 
-      console.log({ token: decodedToken})
+      console.log({ token: decodedToken });
 
       if (!decodedToken) {
         return NextResponse.json({
@@ -37,7 +38,7 @@ export async function POST(request: NextRequest, response: NextResponse) {
           name: 'session',
           value: sessionCookie,
           maxAge: expiresIn,
-          httpOnly: true,
+          // httpOnly: true,
           secure: true,
         };
 
@@ -72,7 +73,7 @@ export async function POST(request: NextRequest, response: NextResponse) {
 }
 
 export async function GET(request: NextRequest) {
-  const session = cookies().get('session')?.value || '';
+  const session = request?.cookies?.get('session')?.value || '';
 
   if (!session) {
     return NextResponse.json({ isLogged: false }, { status: 401 });

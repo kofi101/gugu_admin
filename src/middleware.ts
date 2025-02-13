@@ -17,7 +17,7 @@ export async function middleware(request: NextRequest) {
   const session = request.cookies.get('session')?.value;
   const userType = request.cookies.get('userType')?.value;
 
-  console.log({ session, userType });
+  console.log('usertype session', { session, userType });
 
   // Redirect unauthenticated users to sign-in if not accessing /auth/*
   if (!session || !userType) {
