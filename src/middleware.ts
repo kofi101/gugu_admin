@@ -14,6 +14,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  console.log('request', request);
+
   const session = request.cookies.get('session')?.value;
   const userType = request.cookies.get('userType')?.value;
 
