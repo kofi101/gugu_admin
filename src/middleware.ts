@@ -20,9 +20,12 @@ export async function middleware(request: NextRequest, response: NextResponse) {
 
   const session = request.cookies?.get('session')?.value;
   const userType = request.cookies?.get('userType')?.value;
+  const token = request.cookies?.get('token')?.value;
 
   console.log('session', session);
   console.log('userType', userType);
+
+  console.log('token', token)
 
   // Redirect unauthenticated users to sign-in if not accessing /auth/*
   if (!session || !userType) {

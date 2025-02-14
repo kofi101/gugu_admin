@@ -60,13 +60,12 @@ export async function POST(request: NextRequest, response: NextResponse) {
 
       if (decodedToken) {
         const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
-        const sessionCookie = await auth().createSessionCookie(idToken, { expiresIn });
-      
+        const sessionCookie = await auth().createSessionCookie(idToken, {
+          expiresIn,
+        });
+
         cookies().set('session', sessionCookie, {
-          maxAge: expiresIn,
-          httpOnly: true,
-          secure: true, 
-          sameSite: 'none', // Important for cross-origin requests
+          secure: true,
         });
       }
     }
