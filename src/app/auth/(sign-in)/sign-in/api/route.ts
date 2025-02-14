@@ -5,47 +5,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { baseUrl } from '@/config/base-url';
 
 customInitApp();
-
+// Sign in
 export async function POST(request: NextRequest, response: NextResponse) {
+  const reqData = await request.json();
   try {
-    const reqData = await request.json();
-
-    const authorization = request?.headers?.get('Authorization');
-
-    console.log('Do i get authorization', authorization)
-
-    // verify token with firebase
-    if (authorization?.startsWith('Bearer ')) {
-      const idToken = authorization.split('Bearer ')[1];
-      const decodedToken = await auth()?.verifyIdToken(idToken);
-
-      console.log({ token: decodedToken });
-
-      if (!decodedToken) {
-        return NextResponse.json({
-          message: 'Failed to authenticate',
-          status: 401,
-        });
-      }
-
-      if (decodedToken) {
-        const expiresIn = 60 * 60 * 24 * 5 * 1000;
-        const sessionCookie = await auth().createSessionCookie(idToken, {
-          expiresIn,
-        });
-
-        const options = {
-          name: 'session',
-          value: sessionCookie,
-          maxAge: expiresIn,
-          // httpOnly: true,
-          secure: true,
-        };
-
-        cookies().set(options);
-      }
-    }
-
     const dbTokenRes = await fetch(`${baseUrl}/User/GetToken`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -65,6 +28,37 @@ export async function POST(request: NextRequest, response: NextResponse) {
     cookies().set('userType', dbToken?.userType, { secure: true });
     cookies().set('userId', reqData?.userId, { secure: true });
 
+    const authorization = headers().get('Authorization');
+
+    if (authorization?.startsWith('Bearer ')) {
+      const idToken = authorization.split('Bearer ')[1];
+      const decodedToken = await auth().verifyIdToken(idToken);
+
+      if (!decodedToken) {
+        return NextResponse.json({
+          message: 'Failed to authenticate',
+          status: 401,
+        });
+      }
+
+      if (decodedToken) {
+        const expiresIn = 60 * 60 * 24 * 5 * 1000;
+        const sessionCookie = await auth().createSessionCookie(idToken, {
+          expiresIn,
+        });
+
+        const options = {
+          name: 'session',
+          value: sessionCookie,
+          maxAge: expiresIn,
+          httpOnly: true,
+          secure: true,
+        };
+
+        cookies().set(options);
+      }
+    }
+
     return NextResponse.json({}, { status: 200 });
   } catch (error) {
     console.error(error);
@@ -73,15 +67,13 @@ export async function POST(request: NextRequest, response: NextResponse) {
 }
 
 export async function GET(request: NextRequest) {
-  const session = request?.cookies?.get('session')?.value || '';
+  const session = cookies().get('session')?.value || '';
 
   if (!session) {
     return NextResponse.json({ isLogged: false }, { status: 401 });
   }
 
   const decodedClaims = await auth().verifySessionCookie(session, true);
-
-  console.log('is session  decoded', decodedClaims);
 
   if (!decodedClaims) {
     return NextResponse.json({ isLogged: false }, { status: 401 });

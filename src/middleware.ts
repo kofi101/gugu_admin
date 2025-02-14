@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const globalPrefixes = ['/api', '/_next'];
 export async function middleware(request: NextRequest) {
+  console.log('all request paths', request.nextUrl.pathname);
   // Allow internal Next.js requests (e.g., /_next/*)
   for (const prefix of globalPrefixes) {
     if (request.nextUrl.pathname.startsWith(prefix)) {
@@ -14,22 +15,19 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  console.log('request', request);
-
   const session = request.cookies.get('session')?.value;
   const userType = request.cookies.get('userType')?.value;
 
-  console.log('usertype session', { session, userType });
+  console.log('session', session);
+  console.log('userType', userType);
 
   // Redirect unauthenticated users to sign-in if not accessing /auth/*
   if (!session || !userType) {
-    console.log('session or usertype is not set');
     return NextResponse.redirect(new URL('/auth/sign-in', request.url));
   }
 
   // Validate the session via API call
   try {
-    console.log('waht origin here', request.nextUrl.origin);
     const responseAPI = await fetch(
       `${request.nextUrl.origin}/auth/sign-in/api`,
       {
@@ -38,8 +36,6 @@ export async function middleware(request: NextRequest) {
     );
 
     if (responseAPI.status !== 200) {
-      console.log('what response status', responseAPI.status);
-
       return NextResponse.redirect(new URL('/auth/sign-in', request.url));
     }
   } catch (error) {
@@ -63,8 +59,9 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  console.log('what request url', request.url);
   // Redirect users to their default dashboard if accessing unauthorized routes
   const redirectUrl = userType === 'Merchant' ? '/' : '/admin/dashboard';
   return NextResponse.redirect(new URL(redirectUrl, request.url));
+
+  // NextResponse.next()
 }
