@@ -41,21 +41,33 @@ export async function POST(request: NextRequest, response: NextResponse) {
         });
       }
 
-      if (decodedToken) {
-        const expiresIn = 60 * 60 * 24 * 5 * 1000;
-        const sessionCookie = await auth().createSessionCookie(idToken, {
-          expiresIn,
-        });
+      // if (decodedToken) {
+      //   const expiresIn = 60 * 60 * 24 * 5 * 1000;
+      //   const sessionCookie = await auth().createSessionCookie(idToken, {
+      //     expiresIn,
+      //   });
 
-        const options = {
-          name: 'session',
-          value: sessionCookie,
+      //   const options = {
+      //     name: 'session',
+      //     value: sessionCookie,
+      //     maxAge: expiresIn,
+      //     httpOnly: true,
+      //     secure: true,
+      //   };
+
+      //   cookies().set(options);
+      // }
+
+      if (decodedToken) {
+        const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
+        const sessionCookie = await auth().createSessionCookie(idToken, { expiresIn });
+      
+        cookies().set('session', sessionCookie, {
           maxAge: expiresIn,
           httpOnly: true,
-          secure: true,
-        };
-
-        cookies().set(options);
+          secure: true, 
+          sameSite: 'none', // Important for cross-origin requests
+        });
       }
     }
 
