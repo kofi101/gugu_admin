@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 const globalPrefixes = ['/api', '/_next'];
-export async function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest, response: NextResponse) {
   console.log('all request paths', request.nextUrl.pathname);
   // Allow internal Next.js requests (e.g., /_next/*)
   for (const prefix of globalPrefixes) {
@@ -15,8 +15,11 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const session = request.cookies.get('session')?.value;
-  const userType = request.cookies.get('userType')?.value;
+  console.log('all cookiess', request.cookies)
+  console.log('request', request)
+
+  const session = request.cookies?.get('session')?.value;
+  const userType = request.cookies?.get('userType')?.value;
 
   console.log('session', session);
   console.log('userType', userType);
