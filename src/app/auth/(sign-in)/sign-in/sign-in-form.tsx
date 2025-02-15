@@ -42,7 +42,7 @@ export default function SignInForm() {
       const token = signInRes?.user?.accessToken;
       const userUId = signInRes?.user?.uid;
 
-      if (!token|| !userUId) {
+      if (!token || !userUId) {
         setLoading(false);
         setReset({ email: '', password: '' });
         return toast.error(
@@ -66,9 +66,11 @@ export default function SignInForm() {
         return toast.error(<Text>Something went wrong, try again</Text>);
       }
 
-      toast.success(<Text>Login successful, redirecting..</Text>);
+      toast.success(<Text>Login successful</Text>);
 
-      router.push('/');
+      setTimeout(() => {
+        router.push('/');
+      }, 100);
 
       setLoading(false);
     } catch (error) {

@@ -20,17 +20,16 @@ export async function middleware(request: NextRequest, response: NextResponse) {
     return NextResponse.next();
   }
 
-  console.log('all cookiess', request.cookies)
-  console.log('request', request)
+  // console.log('all cookiess', request.cookies)
+  // console.log('request', request)
 
   // const session = request.cookies?.get('session')?.value;
   const userType = cookieSet.get('userType')?.value;
   const token = cookieSet.get('token')?.value;
 
   // console.log('session', session);
-  console.log('userType', userType);
-
-  console.log('token', token)
+  // console.log('userType', userType);
+  // console.log('token', token)
 
   // Redirect unauthenticated users to sign-in if not accessing /auth/*
   if (!token || !userType) {

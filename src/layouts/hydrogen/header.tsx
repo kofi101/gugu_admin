@@ -8,17 +8,26 @@ import StickyHeader from '@/layouts/sticky-header';
 import { MdLogout } from 'react-icons/md';
 import { useSignOut } from 'react-firebase-hooks/auth';
 import { auth } from '@/config/firebase';
+import { cookies } from 'next/headers';
+import { Button } from 'rizzui';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 
 export default function Header() {
-  const [signOut] = useSignOut(auth);
+  const [loading, setLoading] = useState<boolean>();
 
-  const handleSignOut = () => {
-    signOut();
-    const cookies = document.cookie.split(';');
-    cookies.forEach((cookie) => {
-      const name = cookie.split('=')[0].trim();
-      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-    });
+  const router = useRouter();
+  const handleSignOut = async () => {
+    setLoading(true);
+    try {
+      await fetch('/auth/logout/api');
+
+      router.push('/auth/sign-in');
+      setLoading(false);
+    } catch (err) {
+      setLoading(false);
+      console.error('Error logging out', err);
+    }
   };
 
   return (
@@ -35,15 +44,16 @@ export default function Header() {
           <Logo iconOnly={true} />
         </Link>
       </div>
-      <Link
+      <Button
+        isLoading={loading}
+        variant="text"
         onClick={handleSignOut}
-        href={'/auth/sign-in'}
         aria-label="Logout"
         className="me-4 flex items-center gap-2 text-gray-800 underline underline-offset-2 hover:text-gray-900 lg:me-5 lg:mr-4"
       >
         <p>Logout</p>
         <MdLogout size={20} />
-      </Link>
+      </Button>
     </StickyHeader>
   );
 }

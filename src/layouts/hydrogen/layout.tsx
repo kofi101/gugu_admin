@@ -2,12 +2,12 @@ import Header from '@/layouts/hydrogen/header';
 import Sidebar from '@/layouts/hydrogen/sidebar';
 import { cookies } from 'next/headers';
 
-export default function HydrogenLayout({
+export default async function HydrogenLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const userType = cookies().get('userType')?.value;
+  const userType = await cookies().get('userType')?.value;
 
   return (
     <main className="flex min-h-screen flex-grow">
