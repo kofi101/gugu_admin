@@ -5,8 +5,9 @@ import { NextRequest, NextResponse } from 'next/server';
 
 customInitApp();
 export async function GET(request: NextRequest) {
+    const cookieSet = await cookies();
+
   try {
-    const cookieSet = cookies();
 
     cookieSet.delete('token');
     cookieSet.delete('userType');
