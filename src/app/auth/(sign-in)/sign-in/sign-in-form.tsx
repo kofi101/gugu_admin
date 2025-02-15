@@ -42,7 +42,7 @@ export default function SignInForm() {
       const token = signInRes?.user?.accessToken;
       const userUId = signInRes?.user?.uid;
 
-      if (!token) {
+      if (!token|| !userUId) {
         setLoading(false);
         setReset({ email: '', password: '' });
         return toast.error(

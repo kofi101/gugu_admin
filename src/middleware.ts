@@ -1,53 +1,58 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+
 
 const globalPrefixes = ['/api', '/_next'];
 export async function middleware(request: NextRequest, response: NextResponse) {
-  console.log('all request paths', request.nextUrl.pathname);
+
+
+  const cookieSet = await cookies()
+  // console.log('all request paths', request.nextUrl.pathname);
   // Allow internal Next.js requests (e.g., /_next/*)
   for (const prefix of globalPrefixes) {
-    if (request.nextUrl.pathname.startsWith(prefix)) {
+    if (request.nextUrl.pathname.includes(prefix)) {
       return NextResponse.next();
     }
   }
 
   // Allow all users to access /auth/* paths
-  if (request.nextUrl.pathname.startsWith('/auth')) {
+  if (request.nextUrl.pathname.includes('/auth')) {
     return NextResponse.next();
   }
 
   console.log('all cookiess', request.cookies)
   console.log('request', request)
 
-  const session = request.cookies?.get('session')?.value;
-  const userType = request.cookies?.get('userType')?.value;
-  const token = request.cookies?.get('token')?.value;
+  // const session = request.cookies?.get('session')?.value;
+  const userType = cookieSet.get('userType')?.value;
+  const token = cookieSet.get('token')?.value;
 
-  console.log('session', session);
+  // console.log('session', session);
   console.log('userType', userType);
 
   console.log('token', token)
 
   // Redirect unauthenticated users to sign-in if not accessing /auth/*
-  if (!session || !userType) {
+  if (!token || !userType) {
     return NextResponse.redirect(new URL('/auth/sign-in', request.url));
   }
 
   // Validate the session via API call
-  try {
-    const responseAPI = await fetch(
-      `${request.nextUrl.origin}/auth/sign-in/api`,
-      {
-        headers: { Cookie: `session=${session}` },
-      }
-    );
+  // try {
+  //   const responseAPI = await fetch(
+  //     `${request.nextUrl.origin}/auth/sign-in/api`,
+  //     {
+  //       headers: { Cookie: `session=${session}` },
+  //     }
+  //   );
 
-    if (responseAPI.status !== 200) {
-      return NextResponse.redirect(new URL('/auth/sign-in', request.url));
-    }
-  } catch (error) {
-    console.error('API validation failed:', error);
-    return NextResponse.redirect(new URL('/auth/sign-in', request.url));
-  }
+  //   if (responseAPI.status !== 200) {
+  //     return NextResponse.redirect(new URL('/auth/sign-in', request.url));
+  //   }
+  // } catch (error) {
+  //   console.error('API validation failed:', error);
+  //   return NextResponse.redirect(new URL('/auth/sign-in', request.url));
+  // }
 
   // Define route prefixes for user types
   const routePrefixes = {

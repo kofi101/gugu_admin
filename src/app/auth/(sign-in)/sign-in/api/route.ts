@@ -7,12 +7,12 @@ import { baseUrl } from '@/config/base-url';
 customInitApp();
 // Sign in
 export async function POST(request: NextRequest, response: NextResponse) {
-  const reqData = await request.json();
+  const { email, userId } = await request.json();
   try {
     const dbTokenRes = await fetch(`${baseUrl}/User/GetToken`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: reqData?.email }),
+      body: JSON.stringify({ email }),
     });
 
     if (!dbTokenRes.ok) {
@@ -24,9 +24,28 @@ export async function POST(request: NextRequest, response: NextResponse) {
 
     const dbToken = await dbTokenRes.json();
 
-    cookies().set('token', dbToken?.token, { secure: true });
-    cookies().set('userType', dbToken?.userType, { secure: true });
-    cookies().set('userId', reqData?.userId, { secure: true });
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    const cookieSet = await cookies();
+
+    cookieSet.set('token', dbToken?.token, {
+      secure: true,
+      httpOnly: true,
+      expires: expires,
+      sameSite: 'lax',
+    });
+    cookieSet.set('userType', dbToken?.userType, {
+      secure: true,
+      httpOnly: true,
+      expires: expires,
+      sameSite: 'lax',
+    });
+    cookieSet.set('userId', userId, {
+      secure: true,
+      httpOnly: true,
+      expires: expires,
+      sameSite: 'lax',
+    });
 
     const authorization = headers().get('Authorization');
 
@@ -58,16 +77,19 @@ export async function POST(request: NextRequest, response: NextResponse) {
       //   cookies().set(options);
       // }
 
-      if (decodedToken) {
-        const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
-        const sessionCookie = await auth().createSessionCookie(idToken, {
-          expiresIn,
-        });
 
-        cookies().set('session', sessionCookie, {
-          secure: true,
-        });
-      }
+
+      
+      // if (decodedToken) {
+      //   const expiresIn = 60 * 60 * 24 * 1000; 
+      //   const sessionCookie = await auth().createSessionCookie(idToken, {
+      //     expiresIn,
+      //   });
+
+      //   cookies().set('session', sessionCookie, {
+      //     secure: true,
+      //   });
+      // }
     }
 
     return NextResponse.json({}, { status: 200 });
