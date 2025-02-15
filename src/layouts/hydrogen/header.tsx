@@ -6,9 +6,6 @@ import Sidebar from '@/layouts/hydrogen/sidebar';
 import Logo from '@/components/logo';
 import StickyHeader from '@/layouts/sticky-header';
 import { MdLogout } from 'react-icons/md';
-import { useSignOut } from 'react-firebase-hooks/auth';
-import { auth } from '@/config/firebase';
-import { cookies } from 'next/headers';
 import { Button } from 'rizzui';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -22,7 +19,9 @@ export default function Header() {
     try {
       await fetch('/auth/logout/api');
 
-      router.push('/auth/sign-in');
+      router.replace('/auth/sign-in', {
+        scroll: true,
+      });
       setLoading(false);
     } catch (err) {
       setLoading(false);

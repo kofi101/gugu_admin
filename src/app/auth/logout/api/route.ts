@@ -4,7 +4,7 @@ import { cookies} from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
 customInitApp();
-export async function GET(request: NextRequest, response: NextResponse) {
+export async function GET(request: NextRequest) {
   try {
     const cookieSet = await cookies();
 
