@@ -1,14 +1,13 @@
 import { auth } from '@/config/firebase';
 import { customInitApp } from '@/config/firebase-admin';
-import { cookies} from 'next/headers';
+import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
 customInitApp();
 export async function GET(request: NextRequest) {
-    const cookieSet = await cookies();
+  const cookieSet = await cookies();
 
   try {
-
     cookieSet.delete('token');
     cookieSet.delete('userType');
     cookieSet.delete('userId');
@@ -18,9 +17,9 @@ export async function GET(request: NextRequest) {
     await auth.signOut();
 
     return NextResponse.json({
-        message: 'Logged out successfully',
-        status: 200
-    })
+      message: 'Logged out successfully',
+      status: 200,
+    });
   } catch (error) {
     console.error(error);
     throw new Error('Failed to logout');

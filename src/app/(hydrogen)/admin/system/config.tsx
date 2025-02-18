@@ -2,7 +2,7 @@
 import React from 'react';
 import PageHeader from '@/app/shared/page-header';
 import { Tab } from 'rizzui';
-import CompanyDetails from './company-details';
+import { CompanyDetails } from './company-details';
 
 const pageHeader = {
   title: 'System Management',
@@ -14,7 +14,7 @@ const pageHeader = {
   ],
 };
 
-export default function SystemPage() {
+export default function SystemPage({ companyDetails }) {
   return (
     <>
       <PageHeader
@@ -28,7 +28,7 @@ export default function SystemPage() {
         </Tab.List>
         <Tab.Panels>
           <Tab.Panel>
-            <CompanyDetails />
+            <CompanyDetails companyDetails={companyDetails} />
           </Tab.Panel>
         </Tab.Panels>
       </Tab>
