@@ -147,7 +147,7 @@ export default function SignUpForm() {
       toast.success(<Text>Account created successfully </Text>);
       setLoading(false);
 
-      router.push('/confirmation');
+      router.push('/auth/confirmation');
     } catch (error) {
       setLoading(false);
       console.error(error);
