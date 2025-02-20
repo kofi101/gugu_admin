@@ -16,7 +16,6 @@ import { Form } from '@/components/ui/form';
 import { Text } from '@/components/ui/text';
 import { routes } from '@/config/routes';
 import { loginSchema, LoginSchema } from '@/utils/validators/login.schema';
-import { baseUrl } from '@/config/base-url';
 
 const initialValues: LoginSchema = {
   email: '',

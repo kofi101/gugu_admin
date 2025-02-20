@@ -70,7 +70,7 @@ export const UsersPage = () => {
               <th className="px-4 py-2 text-left">Email</th>
               <th className="px-4 py-2 text-left">Phone Number</th>
               <th className="px-4 py-2 text-left">Registration Date</th>
-              <th className="px-4 py-2 text-left">Actions</th>
+              {/* <th className="px-4 py-2 text-left">Actions</th> */}
             </tr>
           </thead>
           <tbody>
@@ -84,7 +84,7 @@ export const UsersPage = () => {
                   <td className="px-4 py-2">
                     {new Date(user.registrationDate).toDateString()}
                   </td>
-
+{/* 
                   <td className="px-4 py-2">
                     <Button
                       color="danger"
@@ -94,7 +94,7 @@ export const UsersPage = () => {
                     >
                       Delete
                     </Button>
-                  </td>
+                  </td> */}
                 </tr>
               ))}
           </tbody>

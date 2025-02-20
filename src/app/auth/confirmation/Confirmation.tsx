@@ -2,6 +2,8 @@ import React from 'react';
 import { CompanyDetailsType } from './page';
 import { FaPhone } from 'react-icons/fa6';
 import { MdMail } from 'react-icons/md';
+import NextLink from 'next/link';
+import { IoMdArrowBack } from 'react-icons/io';
 
 const Confirmation = ({ details }: { details?: CompanyDetailsType }) => {
   return (
@@ -39,9 +41,16 @@ const Confirmation = ({ details }: { details?: CompanyDetailsType }) => {
           </div>
         )}
 
-        <p className="mt-6 text-sm text-gray-500">
+        <p className="my-6 text-sm text-gray-500">
           Thank you for your patience! 🎉
         </p>
+        <NextLink
+          className="flex items-center justify-center hover:underline"
+          href={'/auth/sign-in'}
+        >
+          <IoMdArrowBack size={24} className="mr-2" />
+          Back to sign In
+        </NextLink>
       </div>
     </div>
   );

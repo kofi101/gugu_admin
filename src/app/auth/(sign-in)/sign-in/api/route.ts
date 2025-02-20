@@ -3,6 +3,7 @@ import { customInitApp } from '@/config/firebase-admin';
 import { cookies, headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { baseUrl } from '@/config/base-url';
+import { redirect } from 'next/navigation';
 
 customInitApp();
 // Sign in
@@ -21,8 +22,6 @@ export async function POST(request: NextRequest, response: NextResponse) {
         status: 500,
       });
     }
-
-
 
     const dbToken = await dbTokenRes.json();
 
@@ -61,7 +60,6 @@ export async function POST(request: NextRequest, response: NextResponse) {
           status: 401,
         });
       }
-
     }
 
     return NextResponse.json({}, { status: 200 });

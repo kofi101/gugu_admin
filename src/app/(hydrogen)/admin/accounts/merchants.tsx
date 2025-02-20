@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { SpinnerLoader } from '@/components/ui/spinner';
 import { fetchUtil } from '@/utils/fetch';
-import {  baseUrl } from '@/config/base-url';
+import { baseUrl } from '@/config/base-url';
 import { Button } from '@/components/ui/button';
 import { Modal, ActionIcon, Radio, RadioGroup } from 'rizzui';
 import { MdOutlineClose, MdOutlineEdit } from 'react-icons/md';
@@ -30,6 +30,8 @@ export const MerchantsPage = () => {
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [loading, setLoading] = useState(false);
 
+  console.log('merchants', merchants);
+
   const fetchMerchants = async () => {
     setLoading(true);
     try {
@@ -51,6 +53,25 @@ export const MerchantsPage = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleApprove = async (email: string) => {
+    const token = await getUserToken();
+    const fetchOptions = {
+      headers: {
+        Authorization: 'Bearer ' + token,
+        'Content-Type': 'application/json',
+      },
+      method: 'POST',
+      body: JSON.stringify({ emailAddress: email }),
+    };
+
+    const res = await fetchUtil(
+      `${baseUrl}/User/ConfirmMerchantAccount`,
+      fetchOptions
+    );
+
+    console.log('res', res);
   };
 
   useEffect(() => {
@@ -98,12 +119,11 @@ export const MerchantsPage = () => {
                 </div>
 
                 <Button
-                  variant="outline"
+                  onClick={() => handleApprove(merchant.email)}
                   size="sm"
                   className="absolute bottom-4 right-4"
-                  color="danger"
                 >
-                  Delete
+                  Approve
                 </Button>
               </div>
             ))}
@@ -134,7 +154,7 @@ const ViewPDF = ({ file }: { file?: string }) => {
           >
             <MdOutlineClose size={24} />
           </ActionIcon>
-          <div className='h-[80vh] w-[80vh]'>
+          <div className="h-[80vh] w-[80vh]">
             <object
               data={file}
               type="application/pdf"
