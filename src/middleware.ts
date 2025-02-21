@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 
 const globalPrefixes = ['/api', '/_next', '/favicon.ico', '/auth'];
 
@@ -12,8 +13,10 @@ export async function middleware(request: NextRequest, response: NextResponse) {
     return NextResponse.next();
   }
 
-  const userType = request.cookies.get('userType')?.value;
-  const token = request.cookies.get('token')?.value;
+  // const userType = request.cookies.get('userType')?.value;
+  // const token = request.cookies.get('token')?.value;
+  const userType = (await cookies()).get('userType')?.value;
+  const token = (await cookies()).get('token')?.value;
 
   // const resCookies = response.Set
 

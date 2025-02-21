@@ -16,6 +16,7 @@ import { Form } from '@/components/ui/form';
 import { Text } from '@/components/ui/text';
 import { routes } from '@/config/routes';
 import { loginSchema, LoginSchema } from '@/utils/validators/login.schema';
+import { handleLogin } from './sigin.action';
 
 const initialValues: LoginSchema = {
   email: '',
@@ -49,27 +50,27 @@ export default function SignInForm() {
         );
       }
 
-      const loginRes = await fetch('/auth/sign-in/api', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          email: data.email,
-          userId: userUId,
-        }),
-      });
+      await handleLogin({ email: data.email, userId: userUId, token });
 
-      if (!loginRes.ok) {
-        setLoading(false);
-        return toast.error(<Text>Something went wrong, try again</Text>);
-      }
+      // const loginRes = await fetch('/auth/sign-in/api', {
+      //   method: 'POST',
+      //   headers: {
+      //     Authorization: `Bearer ${token}`,
+      //   },
+      //   body: JSON.stringify({
+      //     email: data.email,
+      //     userId: userUId,
+      //   }),
+      // });
+
+      // if (!loginRes.ok) {
+      //   setLoading(false);
+      //   return toast.error(<Text>Something went wrong, try again</Text>);
+      // }
 
       toast.success(<Text>Login successful</Text>);
 
-      setTimeout(() => {
-        router.push('/');
-      }, 500);
+      router.push('/');
 
       setLoading(false);
     } catch (error) {
