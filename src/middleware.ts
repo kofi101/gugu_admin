@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const globalPrefixes = ['/api', '/_next', '/favicon.ico', '/auth'];
 
-export async function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest, response: NextResponse) {
   console.log('Request Path:', request.nextUrl.pathname);
 
   // Allow internal Next.js requests
@@ -15,6 +15,15 @@ export async function middleware(request: NextRequest) {
   const userType = request.cookies.get('userType')?.value;
   const token = request.cookies.get('token')?.value;
 
+  const resCookies = response.cookies.getAll()
+
+  // const res = await fetch(
+  //   `${request.nextUrl.origin}/auth/sign-in/api`
+  // ).then((res) => res.json());
+
+  // // const userType = res.userType;
+  // const token = res.token;
+ console.log('all cookies', resCookies)
   console.log('UserType:', userType);
   console.log('Token:', token);
 

@@ -69,7 +69,7 @@ export default function SignInForm() {
 
       setTimeout(() => {
         router.push('/');
-      }, 100);
+      }, 500);
 
       setLoading(false);
     } catch (error) {

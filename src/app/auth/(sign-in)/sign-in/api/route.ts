@@ -3,7 +3,6 @@ import { customInitApp } from '@/config/firebase-admin';
 import { cookies, headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { baseUrl } from '@/config/base-url';
-import { redirect } from 'next/navigation';
 
 customInitApp();
 // Sign in
@@ -70,17 +69,19 @@ export async function POST(request: NextRequest, response: NextResponse) {
 }
 
 export async function GET(request: NextRequest) {
-  const session = cookies().get('session')?.value || '';
+  // const session = cookies().get('session')?.value || '';
 
-  if (!session) {
-    return NextResponse.json({ isLogged: false }, { status: 401 });
-  }
+  // if (!session) {
+  //   return NextResponse.json({ isLogged: false }, { status: 401 });
+  // }
 
-  const decodedClaims = await auth().verifySessionCookie(session, true);
+  // const decodedClaims = await auth().verifySessionCookie(session, true);
 
-  if (!decodedClaims) {
-    return NextResponse.json({ isLogged: false }, { status: 401 });
-  }
+  // if (!decodedClaims) {
+  //   return NextResponse.json({ isLogged: false }, { status: 401 });
+  // }
+  const token = cookies().get('token')?.value;
+  const userType = cookies().get('userType')?.value;
 
-  return NextResponse.json({ isLogged: true }, { status: 200 });
+  return NextResponse.json({ token, userType });
 }
