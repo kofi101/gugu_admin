@@ -15,7 +15,7 @@ export async function middleware(request: NextRequest, response: NextResponse) {
   const userType = request.cookies.get('userType')?.value;
   const token = request.cookies.get('token')?.value;
 
-  const resCookies = response.cookies.getAll()
+  // const resCookies = response.Set
 
   // const res = await fetch(
   //   `${request.nextUrl.origin}/auth/sign-in/api`
@@ -23,7 +23,7 @@ export async function middleware(request: NextRequest, response: NextResponse) {
 
   // // const userType = res.userType;
   // const token = res.token;
- console.log('all cookies', resCookies)
+  // console.log('all cookies', resCookies);
   console.log('UserType:', userType);
   console.log('Token:', token);
 
