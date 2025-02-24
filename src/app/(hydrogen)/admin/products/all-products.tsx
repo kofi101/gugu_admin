@@ -68,7 +68,6 @@ const getProductStatus = (status: ProductStatus): string => {
 
 export const ProductList = () => {
   const [products, setProducts] = useState<Array<Product>>([]);
-  // const [filteredProducts, setFilteredProducts] = useState<Array<Product>>([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState<'Pending' | 'All' | 'Approved'>('All');
   const [productCategory, setProductCategory] = useState<string | null>(null);
@@ -131,12 +130,6 @@ export const ProductList = () => {
           >
             Pending Products
           </Button>
-          {/* <Button
-            onClick={() => setFilter('Approved')}
-            variant={filter === 'Approved' ? 'solid' : 'outline'}
-          >
-            Approved Products
-          </Button> */}
         </div>
       </div>
 
@@ -172,7 +165,7 @@ export const ProductList = () => {
             filteredProducts?.map((product?) => (
               <div
                 key={product?.productId}
-                className="rounded-lg bg-white p-4 shadow-md transition-shadow duration-200 hover:shadow-lg"
+                className="flex flex-col rounded-lg bg-white p-4 shadow-md transition-shadow duration-200 hover:shadow-lg"
               >
                 <h3 className="text-lg font-semibold">
                   {product?.productName}
@@ -199,7 +192,7 @@ export const ProductList = () => {
                     </span>
                   )}
                 </div>
-                <div className="mt-4 flex items-center space-x-4">
+                <div className="mt-auto flex items-center space-x-4">
                   <Link
                     className="underline-offset-2 hover:underline"
                     href={`/admin/products/${product?.productId}`}

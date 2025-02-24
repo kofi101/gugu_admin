@@ -100,18 +100,8 @@ export default function SignUpForm() {
       );
       const fileUpload = await fileUploadRes.json();
 
-      const userTypeRes = await fetch(`${baseUrl}/User/UserTypes`);
-
-      if (!userTypeRes.ok) throw new Error('Failed to get user type');
-
-      const userTypeData = await userTypeRes.json();
-
-      const mechantUserType = userTypeData?.find(
-        (userType) => userType.name === 'Merchant'
-      );
-
       const userBody = {
-        userType: mechantUserType.name,
+        userType: 'Merchant',
         id: firebaseUser?.user?.uid,
         fullName: data.businessName,
         phoneNumber: data.businessPhone,
@@ -132,33 +122,20 @@ export default function SignUpForm() {
       });
 
       if (!dbUserRes.ok) {
-        toast.error(<Text>Failed to add user details </Text>);
-        throw new Error('Failed to add user details');
+        toast.error(<Text>Failed to create your account user </Text>);
+        throw new Error('Failed to create merchant account');
       }
 
-      await fetch('/auth/sign-in/api', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${firebaseUser?.user?.accessToken}`,
-        },
-        body: JSON.stringify({ email: data.email }),
-      });
-
-      toast.success(<Text>Account created successfully </Text>);
+      toast.success(
+        <Text>Account created successfully, pending confirmation </Text>
+      );
       setLoading(false);
 
-      router.push('/confirmation');
+      router.push('/auth/confirmation');
     } catch (error) {
       setLoading(false);
       console.error(error);
-      toast.error(
-        <Text>
-          Authentication failed{' '}
-          <Text as="b" className="font-semibold text-gray-900">
-            {error?.message}
-          </Text>{' '}
-        </Text>
-      );
+      toast.error(<Text>Something went wrong creating your account</Text>);
     }
   };
 

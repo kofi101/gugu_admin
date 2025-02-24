@@ -1,6 +1,5 @@
 'use client';
 import React from 'react';
-import { metaObject } from '@/config/site.config';
 import PageHeader from '@/app/shared/page-header';
 import { Tab } from 'rizzui';
 import { TaxPage } from './taxes';

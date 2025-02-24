@@ -3,14 +3,14 @@ import { PiShoppingBagLight } from 'react-icons/pi';
 import { LiaBusinessTimeSolid } from 'react-icons/lia';
 import {
   MdProductionQuantityLimits,
-  MdOutlineReviews,
   MdOutlineLocalShipping,
   MdManageAccounts,
   MdOutlineStore,
+  MdOutlineDashboardCustomize,
 } from 'react-icons/md';
-import { FaBabyCarriage, FaRegMoneyBillAlt } from 'react-icons/fa';
+import { FaRegMoneyBillAlt } from 'react-icons/fa';
 import { RiCoupon2Line } from 'react-icons/ri';
-import { IoSettingsOutline } from 'react-icons/io5';
+import { IoCartOutline, IoSettingsOutline } from 'react-icons/io5';
 
 // Note: do not add href in the label object, it is rendering as label
 export const merchantMenuItems = [
@@ -67,10 +67,11 @@ export const adminMenuItems = [
   },
 
   {
-    name: 'Business',
-    href: '/admin/business',
-    icon: <LiaBusinessTimeSolid />,
+    name: 'Dashboard',
+    href: '/admin/dashboard',
+    icon: <MdOutlineDashboardCustomize />,
   },
+
   {
     name: 'Products',
     href: '/admin/products',
@@ -80,7 +81,7 @@ export const adminMenuItems = [
   {
     name: 'Orders',
     href: '/admin/orders',
-    icon: <FaBabyCarriage />,
+    icon: <IoCartOutline />,
   },
   {
     name: 'Logistics',
@@ -93,15 +94,20 @@ export const adminMenuItems = [
     icon: <FaRegMoneyBillAlt />,
   },
   {
+    name: 'Business',
+    href: '/admin/business',
+    icon: <LiaBusinessTimeSolid />,
+  },
+  {
     name: 'Accounts',
     href: '/admin/accounts',
     icon: <MdManageAccounts />,
   },
-  {
-    name: 'Reviews',
-    href: '/admin/reviews',
-    icon: <MdOutlineReviews />,
-  },
+  // {
+  //   name: 'Reviews',
+  //   href: '/admin/reviews',
+  //   icon: <MdOutlineReviews />,
+  // },
   {
     name: 'System',
     href: '/admin/system',

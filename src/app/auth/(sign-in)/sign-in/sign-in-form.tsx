@@ -16,7 +16,7 @@ import { Form } from '@/components/ui/form';
 import { Text } from '@/components/ui/text';
 import { routes } from '@/config/routes';
 import { loginSchema, LoginSchema } from '@/utils/validators/login.schema';
-import { baseUrl } from '@/config/base-url';
+import { handleLogin } from './sigin.action';
 
 const initialValues: LoginSchema = {
   email: '',
@@ -42,7 +42,7 @@ export default function SignInForm() {
       const token = signInRes?.user?.accessToken;
       const userUId = signInRes?.user?.uid;
 
-      if (!token) {
+      if (!token || !userUId) {
         setLoading(false);
         setReset({ email: '', password: '' });
         return toast.error(
@@ -50,23 +50,9 @@ export default function SignInForm() {
         );
       }
 
-      const loginRes = await fetch('/auth/sign-in/api', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          email: data.email,
-          userId: userUId,
-        }),
-      });
+      await handleLogin({ email: data.email, userId: userUId, token });
 
-      if (!loginRes.ok) {
-        setLoading(false);
-        return toast.error(<Text>Something went wrong, try again</Text>);
-      }
-
-      toast.success(<Text>Login successful, redirecting..</Text>);
+      toast.success(<Text>Login successful</Text>);
 
       router.push('/');
 

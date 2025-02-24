@@ -1,13 +1,14 @@
+'use server';
+
 import { auth } from 'firebase-admin';
 import { customInitApp } from '@/config/firebase-admin';
-import { cookies, headers } from 'next/headers';
-import { NextRequest, NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { baseUrl } from '@/config/base-url';
 
 customInitApp();
-// Sign in
-export async function POST(request: NextRequest, response: NextResponse) {
-  const { email, userId } = await request.json();
+
+export const handleLogin = async ({ email, userId, token }) => {
+  const cookieSet = await cookies();
   try {
     const dbTokenRes = await fetch(`${baseUrl}/User/GetToken`, {
       method: 'POST',
@@ -16,17 +17,13 @@ export async function POST(request: NextRequest, response: NextResponse) {
     });
 
     if (!dbTokenRes.ok) {
-      return NextResponse.json({
-        message: 'Something went wrong',
-        status: 500,
-      });
+      console.error('Something went wrong');
+      return;
     }
 
     const dbToken = await dbTokenRes.json();
 
     const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-
-    const cookieSet = await cookies();
 
     cookieSet.set('token', dbToken?.token, {
       secure: true,
@@ -47,30 +44,13 @@ export async function POST(request: NextRequest, response: NextResponse) {
       sameSite: 'lax',
     });
 
-    const authorization = headers().get('Authorization');
+    const decodedToken = await auth().verifyIdToken(token);
 
-    if (authorization?.startsWith('Bearer ')) {
-      const idToken = authorization.split('Bearer ')[1];
-      const decodedToken = await auth().verifyIdToken(idToken);
-
-      if (!decodedToken) {
-        return NextResponse.json({
-          message: 'Failed to authenticate',
-          status: 401,
-        });
-      }
+    if (!decodedToken) {
+      throw new Error('Failed to authenticate');
     }
-
-    return NextResponse.json({}, { status: 200 });
   } catch (error) {
     console.error(error);
     throw new Error('Failed to authenticate');
   }
-}
-
-export async function GET(request: NextRequest) {
-  const token = cookies().get('token')?.value;
-  const userType = cookies().get('userType')?.value;
-
-  return NextResponse.json({ token, userType });
-}
+};
