@@ -5,8 +5,8 @@ import { SpinnerLoader } from '@/components/ui/spinner';
 import { fetchUtil } from '@/utils/fetch';
 import { baseUrl } from '@/config/base-url';
 import { Button } from '@/components/ui/button';
-import { Modal, ActionIcon, Radio, RadioGroup } from 'rizzui';
-import { MdOutlineClose, MdOutlineEdit } from 'react-icons/md';
+import { Modal, ActionIcon } from 'rizzui';
+import { MdOutlineClose } from 'react-icons/md';
 import toast from 'react-hot-toast';
 import { Text } from '@/components/ui/text';
 import { getUserToken } from '@/utils/get-token';
@@ -29,9 +29,6 @@ interface Merchant {
 export const MerchantsPage = () => {
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [loading, setLoading] = useState(false);
-
-  console.log('merchants', merchants);
-
   const fetchMerchants = async () => {
     setLoading(true);
     try {

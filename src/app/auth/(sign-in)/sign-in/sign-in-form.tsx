@@ -52,22 +52,6 @@ export default function SignInForm() {
 
       await handleLogin({ email: data.email, userId: userUId, token });
 
-      // const loginRes = await fetch('/auth/sign-in/api', {
-      //   method: 'POST',
-      //   headers: {
-      //     Authorization: `Bearer ${token}`,
-      //   },
-      //   body: JSON.stringify({
-      //     email: data.email,
-      //     userId: userUId,
-      //   }),
-      // });
-
-      // if (!loginRes.ok) {
-      //   setLoading(false);
-      //   return toast.error(<Text>Something went wrong, try again</Text>);
-      // }
-
       toast.success(<Text>Login successful</Text>);
 
       router.push('/');

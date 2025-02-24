@@ -3,9 +3,7 @@ import { cookies } from 'next/headers';
 
 const globalPrefixes = ['/api', '/_next', '/favicon.ico', '/auth'];
 
-export async function middleware(request: NextRequest, response: NextResponse) {
-  console.log('Request Path:', request.nextUrl.pathname);
-
+export async function middleware(request: NextRequest) {
   // Allow internal Next.js requests
   if (
     globalPrefixes.some((prefix) => request.nextUrl.pathname.startsWith(prefix))
@@ -13,22 +11,8 @@ export async function middleware(request: NextRequest, response: NextResponse) {
     return NextResponse.next();
   }
 
-  // const userType = request.cookies.get('userType')?.value;
-  // const token = request.cookies.get('token')?.value;
   const userType = (await cookies()).get('userType')?.value;
   const token = (await cookies()).get('token')?.value;
-
-  // const resCookies = response.Set
-
-  // const res = await fetch(
-  //   `${request.nextUrl.origin}/auth/sign-in/api`
-  // ).then((res) => res.json());
-
-  // // const userType = res.userType;
-  // const token = res.token;
-  // console.log('all cookies', resCookies);
-  console.log('UserType:', userType);
-  console.log('Token:', token);
 
   // Redirect unauthenticated users
   if (!token || !userType) {

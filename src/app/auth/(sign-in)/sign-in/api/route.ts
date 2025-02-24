@@ -69,17 +69,6 @@ export async function POST(request: NextRequest, response: NextResponse) {
 }
 
 export async function GET(request: NextRequest) {
-  // const session = cookies().get('session')?.value || '';
-
-  // if (!session) {
-  //   return NextResponse.json({ isLogged: false }, { status: 401 });
-  // }
-
-  // const decodedClaims = await auth().verifySessionCookie(session, true);
-
-  // if (!decodedClaims) {
-  //   return NextResponse.json({ isLogged: false }, { status: 401 });
-  // }
   const token = cookies().get('token')?.value;
   const userType = cookies().get('userType')?.value;
 

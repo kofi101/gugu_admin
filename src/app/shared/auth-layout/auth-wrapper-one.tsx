@@ -1,15 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import logoImg from '@public/logo-primary.svg';
-import logoImgText from '@public/logo-primary-text.svg';
-import Image from 'next/image';
+
 import { Title, Text } from '@/components/ui/text';
-import { Button } from '@/components/ui/button';
-import { PiAppleLogoFill, PiArrowLeftBold } from 'react-icons/pi';
-import { FcGoogle } from 'react-icons/fc';
-import OrSeparation from './or-separation';
-import toast from 'react-hot-toast';
+
+import { PiArrowLeftBold } from 'react-icons/pi';
+
 import GuguLogo from '@/components/icons/gugu-logo';
 
 export default function AuthWrapperOne({

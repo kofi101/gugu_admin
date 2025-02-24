@@ -27,9 +27,8 @@ export default async function ProductDetailsPage({
     fetchOptions
   );
 
-
   const pageHeader = {
-    title: `${product?.productCode}`,
+    title: `Product Code: ${product?.productCode}`,
     breadcrumb: [
       {
         href: '/admin/products',
