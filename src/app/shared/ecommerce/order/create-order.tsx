@@ -54,8 +54,6 @@ export default function CreateOrder({
   });
 
   const onSubmit: SubmitHandler<CreateOrderInput> = (data) => {
-    // console.log('data', data);
-
     // set timeout ony required to display loading state of the create order button
     if (sameShippingAddress) {
       setBillingAddress(data.billingAddress);

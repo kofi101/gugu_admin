@@ -1,24 +1,18 @@
 'use client';
 
-import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { PiHouseLineBold } from 'react-icons/pi';
 import { Title, Text } from '@/components/ui/text';
 
-// images and icons
-import NotFoundImg from '@public/not-found.png';
+import GuguLogo from '@/components/icons/gugu-logo';
 
 export default function NotFoundPage() {
   const { push } = useRouter();
   return (
     <div className="flex grow items-center px-6 xl:px-10">
       <div className="mx-auto text-center">
-        <Image
-          src={NotFoundImg}
-          alt="not found"
-          className="mx-auto mb-8 aspect-[360/326] max-w-[256px] xs:max-w-[370px] lg:mb-12 2xl:mb-16"
-        />
+        <GuguLogo />
         <Title
           as="h1"
           className="text-[22px] font-bold leading-normal text-gray-1000 lg:text-3xl"

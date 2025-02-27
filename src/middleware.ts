@@ -41,7 +41,7 @@ export async function middleware(request: NextRequest) {
     userType === 'Merchant' &&
     request.nextUrl.pathname.startsWith('/admin')
   ) {
-    return NextResponse.redirect(new URL('/', request.url));
+    return NextResponse.redirect(new URL('/home', request.url));
   }
 
   // Redirect admins trying to access non-admin routes

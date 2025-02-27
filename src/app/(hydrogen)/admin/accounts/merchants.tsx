@@ -29,11 +29,11 @@ interface Merchant {
 export const MerchantsPage = () => {
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [loading, setLoading] = useState(false);
+
   const fetchMerchants = async () => {
     setLoading(true);
     try {
       const token = await getUserToken();
-
       const fetchOptions = {
         headers: {
           Authorization: 'Bearer ' + token,
@@ -45,30 +45,11 @@ export const MerchantsPage = () => {
       );
       setMerchants(data);
     } catch (error) {
-      toast.error(<Text as="b">Failed to fetch merchants</Text>);
+      toast.error('Failed to fetch merchants');
       console.error('Error fetching merchants:', error);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleApprove = async (email: string) => {
-    const token = await getUserToken();
-    const fetchOptions = {
-      headers: {
-        Authorization: 'Bearer ' + token,
-        'Content-Type': 'application/json',
-      },
-      method: 'POST',
-      body: JSON.stringify({ emailAddress: email }),
-    };
-
-    const res = await fetchUtil(
-      `${baseUrl}/User/ConfirmMerchantAccount`,
-      fetchOptions
-    );
-
-    console.log('res', res);
   };
 
   useEffect(() => {
@@ -84,48 +65,108 @@ export const MerchantsPage = () => {
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {merchants.length > 0 &&
-            merchants?.map((merchant) => (
-              <div
-                key={merchant.id}
-                className="relative  rounded-lg  p-6 shadow-lg"
-              >
-                <div className="flex items-center space-x-4">
-                  <div>
-                    <h3 className="text-xl font-bold">{merchant.fullName}</h3>
-                    <p className="text-sm">{merchant.email}</p>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <p className="text-sm">
-                    <span className="font-semibold">Phone:</span>{' '}
-                    {merchant.phoneNumber}
-                  </p>
-                  <p className="text-sm">
-                    <span className="font-semibold">Address:</span>{' '}
-                    {merchant.address}
-                  </p>
-                  <p className="text-sm">
-                    <span className="font-semibold">Business Category:</span>{' '}
-                    {merchant.businessCategory}
-                  </p>
-                  <p className="w-8/12 truncate text-sm">
-                    <span className="font-semibold">
-                      <ViewPDF file={merchant.businessDocument} />:
-                    </span>{' '}
-                  </p>
-                </div>
-
-                <Button
-                  onClick={() => handleApprove(merchant.email)}
-                  size="sm"
-                  className="absolute bottom-4 right-4"
-                >
-                  Approve
-                </Button>
-              </div>
+            merchants.map((merchant) => (
+              <MerchantCard key={merchant.id} merchant={merchant} />
             ))}
         </div>
       )}
+    </div>
+  );
+};
+
+const MerchantCard: React.FC<{ merchant: Merchant }> = ({ merchant }) => {
+  const [approveLoading, setApproveLoading] = useState(false);
+  const [rejectLoading, setRejectLoading] = useState(false);
+
+  const handleApprove = async (email: string) => {
+    try {
+      setApproveLoading(true);
+      const token = await getUserToken();
+      const fetchOptions = {
+        headers: {
+          Authorization: 'Bearer ' + token,
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
+        body: JSON.stringify({ emailAddress: email }),
+      };
+
+      await fetchUtil(`${baseUrl}/User/ConfirmMerchantAccount`, fetchOptions);
+      toast.success('Merchant approved successfully');
+    } catch (error) {
+      toast.error('Failed to approve merchant');
+      console.error('Error approving merchant:', error);
+    } finally {
+      setApproveLoading(false);
+    }
+  };
+
+  const handleReject = async (email: string) => {
+    try {
+      setRejectLoading(true);
+      const token = await getUserToken();
+      const fetchOptions = {
+        headers: {
+          Authorization: 'Bearer ' + token,
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
+        body: JSON.stringify({ emailAddress: email }),
+      };
+
+      await fetchUtil(`${baseUrl}/User/UnconfirmMerchantAccount`, fetchOptions);
+      toast.success('Merchant rejected successfully');
+    } catch (error) {
+      toast.error('Failed to reject merchant');
+      console.error('Error rejecting merchant:', error);
+    } finally {
+      setRejectLoading(false);
+    }
+  };
+
+  return (
+    <div className="relative rounded-lg bg-white p-6 shadow-lg">
+      <div className="flex items-center space-x-4">
+        <div>
+          <h3 className="text-xl font-bold">{merchant.fullName}</h3>
+          <p className="text-sm">{merchant.email}</p>
+        </div>
+      </div>
+      <div className="mt-4">
+        <p className="text-sm">
+          <span className="font-semibold">Phone:</span> {merchant.phoneNumber}
+        </p>
+        <p className="text-sm">
+          <span className="font-semibold">Address:</span> {merchant.address}
+        </p>
+        <p className="text-sm">
+          <span className="font-semibold">Business Category:</span>{' '}
+          {merchant.businessCategory}
+        </p>
+        <p className="w-8/12 truncate text-sm">
+          <span className="font-semibold">
+            <ViewPDF file={merchant.businessDocument} />:
+          </span>
+        </p>
+      </div>
+
+      <div className="mt-4 flex justify-end gap-4">
+        <Button
+          onClick={() => handleApprove(merchant.email)}
+          size="sm"
+          isLoading={approveLoading}
+        >
+          Approve
+        </Button>
+        <Button
+          onClick={() => handleReject(merchant.email)}
+          size="sm"
+          isLoading={rejectLoading}
+          color="danger"
+        >
+          Reject
+        </Button>
+      </div>
     </div>
   );
 };

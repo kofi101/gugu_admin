@@ -24,7 +24,6 @@ export default function ForgetPasswordForm() {
   const [reset, setReset] = useState({});
 
   const onSubmit: SubmitHandler<ResetPasswordSchema> = (data) => {
-    console.log(data);
     setReset(initialValues);
   };
 

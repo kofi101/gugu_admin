@@ -104,6 +104,7 @@ type Columns = {
   onDeleteItem: (id: string) => void;
   onHeaderCellClick: (value: string) => void;
   onChecked?: (id: string) => void;
+  isMerchant?: boolean;
 };
 
 export const getColumns = ({
@@ -114,6 +115,7 @@ export const getColumns = ({
   onHeaderCellClick,
   handleSelectAll,
   onChecked,
+  isMerchant,
 }: Columns) => [
   {
     title: (
@@ -238,6 +240,7 @@ export const getColumns = ({
           title={`Delete the product`}
           description={`Are you sure you want to delete ${row.name} ?`}
           onDelete={() => onDeleteItem(row.id)}
+          isMerchant={isMerchant}
         />
       </div>
     ),

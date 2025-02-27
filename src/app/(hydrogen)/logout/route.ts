@@ -6,8 +6,6 @@ export async function GET(request: NextRequest, response: NextResponse) {
     return NextResponse.json('Method not supported');
   }
 
-  console.log('you hit right',)
-
   const token = cookies().get('token')?.value;
 
   return NextResponse.json({ token });

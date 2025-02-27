@@ -89,7 +89,6 @@ function PageHeaderWithSearch({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  console.log('searchText', searchText);
 
   return (
     <PageHeader title={pageHeader.title} breadcrumb={pageHeader.breadcrumb}>

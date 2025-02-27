@@ -161,7 +161,6 @@ function FilterOption({
   isPrice,
   tooltipText,
 }: FilterOptions) {
-  console.log({ tooltipText });
   return (
     <div className="flex items-center justify-between">
       <div className="relative flex shrink-0 items-center">

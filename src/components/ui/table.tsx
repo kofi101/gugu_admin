@@ -62,7 +62,6 @@ export default function Table({
   className,
   ...props
 }: TableProps) {
-
   return (
     <RcTable
       className={cn(

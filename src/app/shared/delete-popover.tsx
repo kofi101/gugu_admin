@@ -4,21 +4,22 @@ import { Title, Text } from '@/components/ui/text';
 import { ActionIcon } from '@/components/ui/action-icon';
 import { Button } from '@/components/ui/button';
 import { Popover } from '@/components/ui/popover';
-import TrashIcon from '@/components/icons/trash';
-import { PiTrashFill } from 'react-icons/pi';
 
 import { FaRegFileArchive } from 'react-icons/fa';
+import { MdDelete } from 'react-icons/md';
 
 type DeletePopoverProps = {
   title: string;
   description: string;
   onDelete: () => void;
+  isMerchant?: boolean;
 };
 
 export default function DeletePopover({
   title,
   description,
   onDelete,
+  isMerchant,
 }: DeletePopoverProps) {
   return (
     <Popover placement="left">
@@ -29,7 +30,11 @@ export default function DeletePopover({
           aria-label={'Archive Item'}
           className="cursor-pointer hover:!border-gray-900 hover:text-gray-700"
         >
-          <FaRegFileArchive className="h-4 w-4 text-red-500" />
+          {isMerchant ? (
+            <MdDelete className="h-4 w-4 text-red-500" />
+          ) : (
+            <FaRegFileArchive className="h-4 w-4 text-red-500" />
+          )}
         </ActionIcon>
       </Popover.Trigger>
       <Popover.Content>

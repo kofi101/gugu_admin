@@ -78,8 +78,6 @@ export const PickupStation = () => {
     );
   };
 
-  console.log('what here', selectedRegion)
-
   useEffect(() => {
     if (selectedRegion) getCities(selectedRegion.value);
   }, [selectedRegion]);
