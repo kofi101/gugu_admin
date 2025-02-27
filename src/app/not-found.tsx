@@ -4,20 +4,16 @@ import { Title } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
 import { PiHouseLineBold } from 'react-icons/pi';
 import SocialItems from '@/components/ui/social-shares';
-import { siteConfig } from '@/config/site.config';
+
 import NotFoundImg from '@public/not-found.png';
+import GuguLogo from '@/components/icons/gugu-logo';
 
 export default function NotFound() {
   return (
     <div className="flex min-h-screen flex-col bg-[#F8FAFC]">
       <div className="sticky top-0 z-40 flex justify-center py-5 backdrop-blur-lg lg:backdrop-blur-none xl:py-10">
-        <Link href="/">
-          <Image
-            src={siteConfig.logo}
-            alt={siteConfig.title}
-            className="dark:invert"
-            priority
-          />
+        <Link href="/home">
+          <GuguLogo />
         </Link>
       </div>
 

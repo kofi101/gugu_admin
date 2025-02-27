@@ -21,7 +21,7 @@ export const merchantMenuItems = [
 
   {
     name: 'My Shop',
-    href: '/',
+    href: '/home',
     icon: <MdOutlineStore />,
     badge: '',
   },

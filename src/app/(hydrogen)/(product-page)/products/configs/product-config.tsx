@@ -126,7 +126,7 @@ export const MerchantSizeConfig = ({
             size="md"
             rounded="lg"
             color="primary"
-            className="mt-4 w-20 bg-black md:mt-0 md:w-28"
+            className="mt-4 w-20 md:mt-0 md:w-28"
           >
             Add
           </Button>
@@ -264,7 +264,7 @@ export const MerchantColorConfig = ({
             size="md"
             rounded="lg"
             color="primary"
-            className="mt-4 w-20 bg-black md:mt-0 md:w-28"
+            className="mt-4 w-20  md:mt-0 md:w-28"
           >
             Add
           </Button>
@@ -401,7 +401,7 @@ export const MerchantMaterialConfig = ({
             size="md"
             rounded="lg"
             color="primary"
-            className="mt-4 w-20 bg-black md:mt-0 md:w-28"
+            className="mt-4 w-20  md:mt-0 md:w-28"
           >
             Add
           </Button>

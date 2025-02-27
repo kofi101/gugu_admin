@@ -122,7 +122,7 @@ export default function CreateCategory({
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      console.log('createCategory data ->', data);
+
       setReset({
         name: '',
         slug: '',

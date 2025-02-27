@@ -152,7 +152,9 @@ export default function SignUpForm() {
   function handleFileSelection(event: React.ChangeEvent<HTMLInputElement>) {
     const uploadedFile = (event?.target as HTMLInputElement)?.files[0];
     if (!isFileTypeAllowed(uploadedFile?.name, documentFileExtensions)) {
-      return setFileError('Please select a document');
+      return setFileError(
+        'Please select a document format(doc,docx,pdf,txt,ppt)'
+      );
     }
 
     setFiles(uploadedFile);
@@ -262,7 +264,7 @@ export default function SignUpForm() {
             error={fileError}
             onChange={(event) => handleFileSelection(event)}
           />
-          <div className="col-span-2 flex items-start ">
+          {/* <div className="col-span-2 flex items-start ">
             <Checkbox
               {...register('isAgreed')}
               className="[&>label>span]:font-medium [&>label]:items-start"
@@ -285,7 +287,7 @@ export default function SignUpForm() {
                 </>
               }
             />
-          </div>
+          </div> */}
 
           <Button
             disabled={!!fileError}

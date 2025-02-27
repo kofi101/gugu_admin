@@ -17,9 +17,7 @@ export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
       auth.onAuthStateChanged((user) => {
         if (user) {
           setIsUserValid(true);
-          console.log('This is the logged in user', user);
         } else {
-          console.log('no user found');
           return router.push(`${routes.auth.signIn}`);
         }
       });

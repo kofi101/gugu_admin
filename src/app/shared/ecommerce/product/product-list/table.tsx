@@ -7,6 +7,8 @@ import {
   useMemo,
   useState,
 } from 'react';
+import { useRouter } from 'next/navigation';
+
 import dynamic from 'next/dynamic';
 import { useTable } from '@/hooks/use-table';
 import { useColumn } from '@/hooks/use-column';
@@ -19,10 +21,7 @@ import { merchantUrl } from '@/config/base-url';
 import { getUserToken } from '@/utils/get-token';
 import { Text } from '@/components/ui/text';
 import toast from 'react-hot-toast';
-const FilterElement = dynamic(
-  () => import('@/app/shared/ecommerce/product/product-list/filter-element'),
-  { ssr: false }
-);
+
 const TableFooter = dynamic(() => import('@/app/shared/table-footer'), {
   ssr: false,
 });
@@ -35,14 +34,16 @@ const filterState = {
 
 export default function ProductsTable({
   data = [],
-  setRefreshFetch,
+  isMerchant,
 }: {
   data: any[];
-  setRefreshFetch: Dispatch<SetStateAction<boolean>>;
+  isMerchant?: boolean;
 }) {
   const [pageSize, setPageSize] = useState(10);
 
   const [user] = useAuthState(auth);
+
+  const router = useRouter();
 
   const onHeaderCellClick = (value: string) => ({
     onClick: () => {
@@ -61,9 +62,8 @@ export default function ProductsTable({
     };
 
     await fetch(`${merchantUrl}/Delete/${user?.uid}/${id}`, fetchOptions);
-    setRefreshFetch((prev) => !prev);
+    router.refresh();
     toast.success(<Text as="b">Product deleted successfully</Text>);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const {
@@ -97,6 +97,7 @@ export default function ProductsTable({
         onDeleteItem,
         onChecked: handleRowSelect,
         handleSelectAll,
+        isMerchant
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
@@ -143,20 +144,7 @@ export default function ProductsTable({
         setCheckedColumns,
         enableDrawerFilter: true,
       }}
-      tableFooter={
-        <TableFooter
-          checkedItems={selectedRowKeys}
-          handleDelete={(ids: string[]) => {
-            setSelectedRowKeys([]);
-            // handleDelete(ids);
-          }}
-        >
-          <Button size="sm" className="dark:bg-gray-300 dark:text-gray-800">
-            Download {selectedRowKeys.length}{' '}
-            {selectedRowKeys.length > 1 ? 'Products' : 'Product'}
-          </Button>
-        </TableFooter>
-      }
+      tableFooter={<></>}
       className="overflow-hidden rounded-md border border-muted text-sm shadow-sm [&_.rc-table-placeholder_.rc-table-expanded-row-fixed>div]:h-60 [&_.rc-table-placeholder_.rc-table-expanded-row-fixed>div]:justify-center [&_.rc-table-row:last-child_td.rc-table-cell]:border-b-0 [&_thead.rc-table-thead]:border-t-0"
     />
   );

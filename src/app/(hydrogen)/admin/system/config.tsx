@@ -3,6 +3,7 @@ import React from 'react';
 import PageHeader from '@/app/shared/page-header';
 import { Tab } from 'rizzui';
 import { CompanyDetails } from './company-details';
+import { Carousel } from './carousel';
 
 const pageHeader = {
   title: 'System Management',
@@ -14,7 +15,11 @@ const pageHeader = {
   ],
 };
 
-export default function SystemPage({ companyDetails }) {
+export default function SystemPage({
+  companyDetails,
+  approvedProducts,
+  carouselData,
+}) {
   return (
     <>
       <PageHeader
@@ -25,10 +30,19 @@ export default function SystemPage({ companyDetails }) {
       <Tab>
         <Tab.List>
           <Tab.ListItem>Company Info</Tab.ListItem>
+          <Tab.ListItem>Carousel Banner</Tab.ListItem>
         </Tab.List>
+
         <Tab.Panels>
           <Tab.Panel>
             <CompanyDetails companyDetails={companyDetails} />
+          </Tab.Panel>
+
+          <Tab.Panel>
+            <Carousel
+              approvedProducts={approvedProducts}
+              carouselData={carouselData}
+            />
           </Tab.Panel>
         </Tab.Panels>
       </Tab>

@@ -2,40 +2,34 @@
 
 import React, { Fragment } from 'react';
 import Link from 'next/link';
+
 import { usePathname } from 'next/navigation';
 import { Title } from '@/components/ui/text';
 import { Collapse } from '@/components/ui/collapse';
 import cn from '@/utils/class-names';
 import { PiCaretDownBold } from 'react-icons/pi';
 import SimpleBar from '@/components/ui/simplebar';
-import {
-  merchantMenuItems,
-  adminMenuItems,
-} from '@/layouts/hydrogen/menu-items';
 import StatusBadge from '@/components/get-status-badge';
 import GuguLogo from '@/components/icons/gugu-logo';
 
 export default function Sidebar({
   className,
-  userType,
+  routes,
 }: {
   className?: string;
-  userType?: string;
+  routes: Array<any>;
 }) {
-  const isMerchantNav =
-    userType == 'Merchant' ? merchantMenuItems : adminMenuItems;
-
   const pathname = usePathname();
   return (
     <aside
       className={cn(
-        'fixed bottom-0 start-0 z-50 h-full w-[270px] border-e-2 border-gray-100 bg-primary-dark 2xl:w-72 dark:bg-gray-100/50',
+        'fixed bottom-0 start-0 z-50 h-full w-[270px] bg-primary-dark 2xl:w-72 dark:bg-gray-100/50',
         className
       )}
     >
       <div className="sticky top-0 z-40 px-6 pb-5 pt-5 2xl:px-8 2xl:pt-6 dark:bg-gray-100/5">
         <Link
-          href={'/'}
+          href={'/home'}
           aria-label="Site Logo"
           className="text-gray-800 hover:text-gray-900"
         >
@@ -45,8 +39,8 @@ export default function Sidebar({
 
       <SimpleBar className="h-[calc(100%-80px)]">
         <div className="mt-4 pb-3 3xl:mt-6">
-          {Array.isArray(isMerchantNav) &&
-            isMerchantNav?.map((item, index) => {
+          {Array.isArray(routes) &&
+            routes?.map((item, index) => {
               const isActive = pathname === (item?.href as string);
               const pathnameExistInDropdowns: any = item?.dropdownItems?.filter(
                 (dropdownItem) => dropdownItem.href === pathname

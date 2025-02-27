@@ -51,7 +51,7 @@ export default function ProductDetailsSummery({
     }, 600);
   };
 
-  // console.log('errors', methods.formState.errors?.productColor);
+
 
   return (
     <>

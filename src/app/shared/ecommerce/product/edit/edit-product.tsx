@@ -93,7 +93,6 @@ export default function EditProduct({ singleProduct, className }: IndexProps) {
     resolver: zodResolver(editProductFormSchema),
   });
 
-  console.log('error', methods.formState.errors);
 
   useEffect(() => {
     if (singleProduct && singleProduct.length > 0) {
@@ -239,7 +238,7 @@ export default function EditProduct({ singleProduct, className }: IndexProps) {
 }
 
 const fileDataMapper = (fileData: Array<string>) => {
-  console.log('files', fileData);
+
   const result = [
     {
       imageOne: '',

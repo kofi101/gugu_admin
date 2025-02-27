@@ -4,9 +4,7 @@ import { PiPrinterBold } from 'react-icons/pi';
 import { Button } from '@/components/ui/button';
 
 export default function PrintButton() {
-  function handlePrint() {
-    console.log('write print logic');
-  }
+  function handlePrint() {}
 
   return (
     <Button
