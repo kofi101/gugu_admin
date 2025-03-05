@@ -23,11 +23,6 @@ export default async function AnalyticsPage() {
     fetchOptions
   );
 
-  const approvedProducts = await fetchUtil(
-    `${managementUrl}/ApprovedProducts`,
-    fetchOptions
-  );
-
   const carouselData = await fetchUtil(
     `${managementUrl}/CarouselBanner`,
     fetchOptions
@@ -35,7 +30,6 @@ export default async function AnalyticsPage() {
 
   return (
     <SystemPage
-      approvedProducts={approvedProducts}
       carouselData={carouselData}
       companyDetails={companyDetails}
     />
