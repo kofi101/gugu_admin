@@ -15,11 +15,7 @@ const pageHeader = {
   ],
 };
 
-export default function SystemPage({
-  companyDetails,
-  approvedProducts,
-  carouselData,
-}) {
+export default function SystemPage({ companyDetails, carouselData }) {
   return (
     <>
       <PageHeader
@@ -39,10 +35,7 @@ export default function SystemPage({
           </Tab.Panel>
 
           <Tab.Panel>
-            <Carousel
-              approvedProducts={approvedProducts}
-              carouselData={carouselData}
-            />
+            <Carousel carouselData={carouselData} />
           </Tab.Panel>
         </Tab.Panels>
       </Tab>
