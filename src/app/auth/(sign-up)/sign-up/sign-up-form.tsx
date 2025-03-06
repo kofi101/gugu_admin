@@ -112,6 +112,7 @@ export default function SignUpForm() {
         businessDocument: fileUpload?.path,
         firebaseId: firebaseUser?.user?.uid,
         createdBy: firebaseUser?.user?.uid,
+        registrationDate: Date.now(),
       };
       const dbUserRes = await fetch(`${baseUrl}/User/AddUserDetails`, {
         method: 'POST',
