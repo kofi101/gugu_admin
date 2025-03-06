@@ -22,6 +22,7 @@ export const MerchantCard: React.FC<{
 
   const handleApprove = async () => {
     try {
+      alert('Please be sure to approve merchant, this action cannot be undone');
       setApproveLoading(true);
       const token = await getUserToken();
       const fetchOptions = {
@@ -49,6 +50,7 @@ export const MerchantCard: React.FC<{
   };
 
   const handleReject = async () => {
+    alert('Please be sure to reject merchant, this action cannot be undone');
     try {
       setRejectLoading(true);
       const token = await getUserToken();
