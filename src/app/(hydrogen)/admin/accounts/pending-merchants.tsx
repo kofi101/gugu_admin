@@ -5,7 +5,12 @@ import { MerchantCard } from './merchant-card';
 import { Merchant } from './merchants';
 import { Input } from '@/components/ui/input';
 
-export function PendingMerchant({ merchants }: { merchants: Array<Merchant> }) {
+export function PendingMerchant({
+  merchants,
+  setRefresh,
+}: {
+  merchants: Array<Merchant>;
+}) {
   const [searchTerm, setSearchTerm] = useState('');
 
   const filteredMerchants = merchants.filter((merchant) =>
@@ -29,7 +34,11 @@ export function PendingMerchant({ merchants }: { merchants: Array<Merchant> }) {
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         {filteredMerchants?.length > 0 ? (
           filteredMerchants?.map((merchant) => (
-            <MerchantCard merchant={merchant} key={merchant.email} />
+            <MerchantCard
+              setRefresh={setRefresh}
+              merchant={merchant}
+              key={merchant.email}
+            />
           ))
         ) : (
           <p className="text-gray-500">No merchants found</p>

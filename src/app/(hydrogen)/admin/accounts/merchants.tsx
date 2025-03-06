@@ -23,6 +23,7 @@ export interface Merchant {
 export const MerchantsPage = () => {
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [loading, setLoading] = useState(false);
+  const [refresh, setRefresh] = useState(false);
 
   const fetchMerchants = async () => {
     setLoading(true);
@@ -48,7 +49,7 @@ export const MerchantsPage = () => {
 
   useEffect(() => {
     fetchMerchants();
-  }, []);
+  }, [refresh]);
 
   const approvedMerchants = sortByDate(
     filterProducts(merchants, 'status', 'Confirmed'),
@@ -83,7 +84,10 @@ export const MerchantsPage = () => {
           <Tab.Panels>
             <Tab.Panel>
               {pendingMerchantsData?.length > 0 ? (
-                <PendingMerchant merchants={pendingMerchantsData} />
+                <PendingMerchant
+                  setRefresh={setRefresh}
+                  merchants={pendingMerchantsData}
+                />
               ) : (
                 <p>No data...</p>
               )}

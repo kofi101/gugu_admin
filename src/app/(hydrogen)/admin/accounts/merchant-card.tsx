@@ -9,20 +9,21 @@ import { MdOutlineClose } from 'react-icons/md';
 import toast from 'react-hot-toast';
 import { getUserToken } from '@/utils/get-token';
 import { Merchant } from './merchants';
-import { SetStateAction } from 'jotai';
+import { useRouter } from 'next/navigation';
 
 export const MerchantCard: React.FC<{
   merchant: Merchant;
   isApproved?: boolean;
-}> = ({ merchant, isApproved }) => {
+}> = ({ merchant, isApproved, setRefresh }) => {
   const [approveLoading, setApproveLoading] = useState(false);
   const [rejectLoading, setRejectLoading] = useState(false);
   const [approveReason, setApproveReason] = useState('');
   const [rejectReason, setRejectReason] = useState('');
 
+  const router = useRouter();
+
   const handleApprove = async () => {
     try {
-      alert('Please be sure to approve merchant, this action cannot be undone');
       setApproveLoading(true);
       const token = await getUserToken();
       const fetchOptions = {
@@ -41,16 +42,18 @@ export const MerchantCard: React.FC<{
       await fetchUtil(`${baseUrl}/User/ConfirmMerchantAccount`, fetchOptions);
       toast.success('Merchant approved successfully');
       setApproveReason('');
+      router.refresh();
     } catch (error) {
       toast.error('Failed to approve merchant');
       console.error('Error approving merchant:', error);
     } finally {
+      router.refresh();
       setApproveLoading(false);
+      setRefresh((prev) => !prev);
     }
   };
 
   const handleReject = async () => {
-    alert('Please be sure to reject merchant, this action cannot be undone');
     try {
       setRejectLoading(true);
       const token = await getUserToken();
@@ -70,11 +73,15 @@ export const MerchantCard: React.FC<{
       await fetchUtil(`${baseUrl}/User/ConfirmMerchantAccount`, fetchOptions);
       toast.success('Merchant rejected successfully');
       setRejectReason('');
+
+      router.refresh();
     } catch (error) {
       toast.error('Failed to reject merchant');
       console.error('Error rejecting merchant:', error);
     } finally {
+      router.refresh();
       setRejectLoading(false);
+      setRefresh((prev) => !prev);
     }
   };
 
@@ -184,7 +191,7 @@ const ApproveReject = ({
   handleApprove?: () => void;
   handleReject?: () => void;
   reason: string;
-  setReason: Dispatch<SetStateAction<string>>;
+  setReason: Dispatch<React.SetStateAction<string>>;
   approveLoading?: boolean;
   rejectLoading?: boolean;
 }) => {
@@ -210,9 +217,15 @@ const ApproveReject = ({
           >
             <MdOutlineClose size={24} />
           </ActionIcon>
+          <p className="my-4 text-red-500">
+            {`Please be sure to ${
+              isApprove ? 'approve' : 'reject'
+            } a merchant. This action cannot be undone`}
+          </p>
 
           <div className="my-4 w-full">
             <Textarea
+              required
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder={`${
