@@ -1,9 +1,10 @@
 import HydrogenLayout from '@/layouts/hydrogen/layout';
 import { merchantMenuItems } from '@/layouts/hydrogen/menu-items';
-export default function DefaultLayout({
+
+export default async function DefaultLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <HydrogenLayout routes={merchantMenuItems}>{children}</HydrogenLayout>;
+  return <HydrogenLayout isMerchant routes={merchantMenuItems}>{children}</HydrogenLayout>;
 }
