@@ -4,12 +4,14 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { PiArrowRightBold } from 'react-icons/pi';
-import { useCreateUserWithEmailAndPassword } from 'react-firebase-hooks/auth';
+import {
+  useCreateUserWithEmailAndPassword,
+  useSendEmailVerification,
+} from 'react-firebase-hooks/auth';
 import { auth } from '@/config/firebase';
 import { useRouter } from 'next/navigation';
 
 import { Password } from '@/components/ui/password';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
@@ -56,6 +58,8 @@ export default function SignUpForm() {
   const [createUserWithEmailAndPassword] =
     useCreateUserWithEmailAndPassword(auth);
 
+  const [sendEmailVerification] = useSendEmailVerification(auth);
+
   const documentFileExtensions = [
     'doc',
     'docx',
@@ -72,23 +76,33 @@ export default function SignUpForm() {
   const onSubmit: SubmitHandler<SignUpSchema> = async (data) => {
     try {
       if (!files) {
-        setFileError('Please attach business document');
+        setFileError(
+          'Please attach business document(doc,docx,pdf,txt,ppt,xls,)'
+        );
         return;
       }
       if (!data.category) {
         setError('category', {
-          type: ' manual',
+          type: 'manual',
           message: 'Select business category',
         });
         return;
       }
+
       setLoading(true);
+
       const firebaseUser = await createUserWithEmailAndPassword(
         data.email,
         data.password
       );
 
-      reset({ ...initialValues, isAgreed: false });
+      if (!firebaseUser?.user) {
+        toast.error('Failed to create user account');
+        throw new Error('User creation failed.');
+      }
+
+      await sendEmailVerification();
+
       const fileForm = new FormData();
       fileForm.append('files', files);
       const fileUploadRes = await fetch(
@@ -98,11 +112,16 @@ export default function SignUpForm() {
           body: fileForm,
         }
       );
+
+      if (!fileUploadRes.ok) {
+        throw new Error('Failed to upload business document.');
+      }
+
       const fileUpload = await fileUploadRes.json();
 
       const userBody = {
         userType: 'Merchant',
-        id: firebaseUser?.user?.uid,
+        id: firebaseUser.user.uid,
         fullName: data.businessName,
         phoneNumber: data.businessPhone,
         email: data.email,
@@ -110,28 +129,34 @@ export default function SignUpForm() {
         shipping_BillingAddress: data.address,
         businessCategoryId: data.category,
         businessDocument: fileUpload?.path,
-        firebaseId: firebaseUser?.user?.uid,
-        createdBy: firebaseUser?.user?.uid,
+        firebaseId: firebaseUser.user.uid,
+        createdBy: firebaseUser.user.uid,
         registrationDate: new Date(Date.now()).toISOString(),
       };
+
       const dbUserRes = await fetch(`${baseUrl}/User/AddUserDetails`, {
         method: 'POST',
         body: JSON.stringify(userBody),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
       });
 
       if (!dbUserRes.ok) {
-        toast.error(<Text>Failed to create your account user </Text>);
         throw new Error('Failed to create merchant account');
       }
 
-      toast.success(
-        <Text>Account created successfully, pending confirmation </Text>
-      );
-      setLoading(false);
+      reset();
 
+      toast.success(
+        <Text>
+          Verification email sent. Please check your inbox and verify.
+          <br />
+          We will receive your request and will respond soon.
+          <br />
+          Best Regards, GUGU Team
+        </Text>
+      );
+
+      setLoading(false);
       router.push('/auth/confirmation');
     } catch (error) {
       setLoading(false);
@@ -259,36 +284,12 @@ export default function SignUpForm() {
           />
 
           <FileInput
-            label="Proof of business document"
+            label="Proof of business document(doc,docx,pdf,txt,ppt)"
             placeholder="Proof of Business Document"
             className="col-span-2"
             error={fileError}
             onChange={(event) => handleFileSelection(event)}
           />
-          {/* <div className="col-span-2 flex items-start ">
-            <Checkbox
-              {...register('isAgreed')}
-              className="[&>label>span]:font-medium [&>label]:items-start"
-              label={
-                <>
-                  By signing up you have agreed to our{' '}
-                  <Link
-                    href="/"
-                    className="font-medium text-blue transition-colors hover:underline"
-                  >
-                    Terms
-                  </Link>{' '}
-                  &{' '}
-                  <Link
-                    href="/"
-                    className="font-medium text-blue transition-colors hover:underline"
-                  >
-                    Privacy Policy
-                  </Link>
-                </>
-              }
-            />
-          </div> */}
 
           <Button
             disabled={!!fileError}

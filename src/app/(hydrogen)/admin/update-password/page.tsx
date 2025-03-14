@@ -1,29 +1,29 @@
-import { CustomerReviews } from './review';
 import { metaObject } from '@/config/site.config';
 import PageHeader from '@/app/shared/page-header';
+import UpdatePassword from './profile';
 
 export const metadata = {
-  ...metaObject('Reviews'),
+  ...metaObject('User admin password'),
 };
 
 const pageHeader = {
-  title: 'Customer Reviews',
+  title: 'Update Password',
   breadcrumb: [
     {
-      href: '/admin/reviews',
-      name: 'Customer reviews',
+      href: '/admin/update-password',
+      name: 'Update admin password',
     },
   ],
 };
 
-export default function AdminOrders() {
+export default async function UserProfile() {
   return (
     <>
       <PageHeader
         title={pageHeader.title}
         breadcrumb={pageHeader.breadcrumb}
       ></PageHeader>
-      <CustomerReviews />
+      <UpdatePassword />
     </>
   );
 }

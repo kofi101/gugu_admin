@@ -7,7 +7,17 @@ import { baseUrl } from '@/config/base-url';
 
 customInitApp();
 
-export const handleLogin = async ({ email, userId, token }) => {
+export const handleLogin = async ({
+  email,
+  userId,
+  token,
+  isVerified,
+}: {
+  email: string;
+  userId: string;
+  token: string;
+  isVerified: boolean;
+}) => {
   const cookieSet = await cookies();
   try {
     const dbTokenRes = await fetch(`${baseUrl}/User/GetToken`, {
@@ -38,6 +48,13 @@ export const handleLogin = async ({ email, userId, token }) => {
       sameSite: 'lax',
     });
     cookieSet.set('userId', userId, {
+      secure: true,
+      httpOnly: true,
+      expires: expires,
+      sameSite: 'lax',
+    });
+
+    cookieSet.set('isVerified', String(isVerified), {
       secure: true,
       httpOnly: true,
       expires: expires,
