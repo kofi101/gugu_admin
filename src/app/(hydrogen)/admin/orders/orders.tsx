@@ -13,6 +13,8 @@ import { AllOrderTypes } from './page';
 import { format } from 'date-fns';
 import { Unauthorized } from '../../(product-page)/products/configs/config';
 import { MdClose } from 'react-icons/md';
+import { sortBy } from '@/utils/sort';
+import Pagination from '@/components/pagination';
 
 type OrderStatus = {
   id: number;
@@ -28,9 +30,18 @@ export const OrdersManagement = ({
   orderStatuses: Array<OrderStatus>;
 }) => {
   const [filteredStatus, setFilteredStatus] = useState();
-  const [orders, setOrders] = useState(allOrders);
-
   const [formLoading, setFormLoading] = useState(false);
+  const [orders, setOrders] = useState(allOrders);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 25;
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+
+  const filteredOrders = filteredStatus
+    ? Array.isArray(orders) &&
+      orders?.filter((order) => order.orderStatus === filteredStatus.value)
+    : orders;
 
   const {
     handleSubmit,
@@ -79,10 +90,10 @@ export const OrdersManagement = ({
     }
   };
 
-  const filteredOrders = filteredStatus
-    ? Array.isArray(orders) &&
-      orders?.filter((order) => order.orderStatus === filteredStatus.value)
-    : orders;
+  const currentItems: Array<AllOrderTypes> = filteredOrders?.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
 
   if (!orders || orders?.length === 0) {
     return <p className="mt-20 text-center text-gray-600">No orders found</p>;
@@ -174,9 +185,7 @@ export const OrdersManagement = ({
               <th className="border-b bg-gray-100 px-4 py-2 text-sm font-semibold uppercase text-gray-600">
                 Item Total (GHC)
               </th>
-              <th className="border-b bg-gray-100 px-4 py-2 text-sm font-semibold uppercase text-gray-600">
-                Discount (GHC)
-              </th>
+
               <th className="border-b bg-gray-100 px-4 py-2 text-sm font-semibold uppercase text-gray-600">
                 Shipping Cost (GHC)
               </th>
@@ -186,13 +195,16 @@ export const OrdersManagement = ({
               <th className="border-b bg-gray-100 px-4 py-2 text-sm font-semibold uppercase text-gray-600">
                 Order Status
               </th>
+              <th className="border-b bg-gray-100 px-4 py-2 text-sm font-semibold uppercase text-gray-600">
+                {/* Order Status */}
+              </th>
             </tr>
           </thead>
 
           <tbody>
-            {Array.isArray(filteredOrders) &&
-              filteredOrders?.map((order) => (
-                <tr className="" key={order.orderNumber}>
+            {Array.isArray(currentItems) &&
+              sortBy(currentItems, 'transactionDate', 'desc')?.map((order) => (
+                <tr key={order.orderNumber}>
                   <td className="border-b px-4 py-4 text-sm text-gray-700">
                     {order.orderNumber}
                   </td>
@@ -208,9 +220,7 @@ export const OrdersManagement = ({
                   <td className="border-b px-4 py-4 text-sm text-gray-700">
                     {order.itemTotal.toFixed(2)}
                   </td>
-                  <td className="border-b px-4 py-4 text-sm text-gray-700">
-                    {order.discount.toFixed(2)}
-                  </td>
+
                   <td className="border-b px-4 py-4 text-sm text-gray-700">
                     {order.shippingCost.toFixed(2)}
                   </td>
@@ -222,11 +232,29 @@ export const OrdersManagement = ({
                       ? 'Out for Delivery'
                       : order.orderStatus}
                   </td>
+
+                  <td className="border-b px-4 py-4 text-sm text-gray-700">
+                    <a
+                      href={`/admin/orders/${order.customerId}/${order.orderNumber}`}
+                      className="whitespace-nowrap rounded-lg text-sm underline hover:text-primary"
+                    >
+                      View Details
+                    </a>
+                  </td>
                 </tr>
               ))}
           </tbody>
         </table>
       )}
+
+      <div className="flex justify-center">
+        <Pagination
+          totalItems={filteredOrders?.length}
+          itemsPerPage={itemsPerPage}
+          currentPage={currentPage}
+          onPageChange={setCurrentPage}
+        />
+      </div>
     </div>
   );
 };

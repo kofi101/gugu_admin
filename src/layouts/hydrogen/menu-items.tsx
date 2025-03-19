@@ -9,8 +9,9 @@ import {
   MdOutlineDashboardCustomize,
 } from 'react-icons/md';
 import { FaRegMoneyBillAlt } from 'react-icons/fa';
-import { RiCoupon2Line } from 'react-icons/ri';
+import { RiCoupon2Line, RiLockPasswordFill } from 'react-icons/ri';
 import { IoCartOutline, IoSettingsOutline } from 'react-icons/io5';
+import { FaMoneyBillTrendUp } from 'react-icons/fa6';
 
 // Note: do not add href in the label object, it is rendering as label
 export const merchantMenuItems = [
@@ -48,7 +49,7 @@ export const merchantMenuItems = [
   {
     name: 'Orders',
     href: '/orders',
-    icon: <RiCoupon2Line />,
+    icon: <FaMoneyBillTrendUp />,
     badge: '',
   },
 
@@ -56,6 +57,13 @@ export const merchantMenuItems = [
     name: 'Coupons',
     href: routes.eCommerce.coupons,
     icon: <RiCoupon2Line />,
+    badge: '',
+  },
+
+  {
+    name: 'Profile',
+    href: '/update-profile',
+    icon: <MdManageAccounts />,
     badge: '',
   },
 ];
@@ -103,14 +111,14 @@ export const adminMenuItems = [
     href: '/admin/accounts',
     icon: <MdManageAccounts />,
   },
-  // {
-  //   name: 'Reviews',
-  //   href: '/admin/reviews',
-  //   icon: <MdOutlineReviews />,
-  // },
   {
     name: 'System',
     href: '/admin/system',
     icon: <IoSettingsOutline />,
+  },
+  {
+    name: 'Update Password',
+    href: '/admin/update-password',
+    icon: <RiLockPasswordFill />,
   },
 ];

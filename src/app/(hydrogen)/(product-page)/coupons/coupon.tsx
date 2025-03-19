@@ -95,10 +95,10 @@ const CouponPage = () => {
           Authorization: 'Bearer ' + token,
         },
         body: JSON.stringify({
-          couponTypeId: 0,
-          couponAmount: 0, //formData.couponAmount,
+          couponTypeId: 2,
+          couponAmount: 0,
           couponPercentage: formData.couponPercentage,
-          applicableId: 1, //formData.applicableId.value,
+          applicableId: 1,
           startDate: formData.startDate,
           expiryDate: formData.expiryDate,
           quantityToGenerate: formData.quantityToGenerate,

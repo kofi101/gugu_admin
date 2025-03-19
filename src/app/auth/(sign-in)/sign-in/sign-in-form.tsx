@@ -9,7 +9,6 @@ import { useSignInWithEmailAndPassword } from 'react-firebase-hooks/auth';
 import { auth } from '@/config/firebase';
 import { useRouter } from 'next/navigation';
 import { Password } from '@/components/ui/password';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form } from '@/components/ui/form';
@@ -21,7 +20,6 @@ import { handleLogin } from './sigin.action';
 const initialValues: LoginSchema = {
   email: '',
   password: '',
-  rememberMe: true,
 };
 
 export default function SignInForm() {
@@ -50,7 +48,12 @@ export default function SignInForm() {
         );
       }
 
-      await handleLogin({ email: data.email, userId: userUId, token });
+      await handleLogin({
+        email: data.email,
+        userId: userUId,
+        token,
+        isVerified: signInRes?.user?.emailVerified,
+      });
 
       toast.success(<Text>Login successful</Text>);
 

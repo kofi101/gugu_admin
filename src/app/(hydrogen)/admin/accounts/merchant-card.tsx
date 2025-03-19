@@ -225,7 +225,6 @@ const ApproveReject = ({
 
           <div className="my-4 w-full">
             <Textarea
-              required
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder={`${

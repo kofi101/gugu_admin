@@ -46,7 +46,7 @@ export function DeleteComponent({
         );
       }
 
-      fetchConfig();
+      fetchConfig?.();
 
       setLoading(false);
       toast.success(<Text>{name} deleted successfully</Text>);
