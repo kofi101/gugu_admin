@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import { baseUrl } from '@/config/base-url';
+import { baseUrl, managementUrl } from '@/config/base-url';
 import { metaObject } from '@/config/site.config';
 import PageHeader from '@/app/shared/page-header';
 import UpdateProfileConfig from './config';
@@ -19,10 +19,12 @@ const pageHeader = {
 };
 
 export default async function UpdateProfile() {
-  const token = cookies()?.get('token');
-  const userId = cookies()?.get('userId');
+  const token = cookies()?.get('token')?.value;
+  const userId = cookies()?.get('userId')?.value;
 
   let userDetails;
+
+  let businessCategories;
 
   try {
     if (!token || !userId) {
@@ -32,16 +34,17 @@ export default async function UpdateProfile() {
     const fetchOptions = {
       headers: {
         Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
       },
     };
+
+    const categoryRes = await fetch(`${managementUrl}/BusinessCategories`);
+
+    businessCategories = await categoryRes.json();
 
     userDetails = await fetch(
       `${baseUrl}/User/GetUserDetails/${userId}`,
       fetchOptions
     ).then((res) => res.json());
-
-    console.log('user details', userDetails);
   } catch (error) {
     console.error('Error while fetching dashboard data', error);
   }
@@ -53,7 +56,10 @@ export default async function UpdateProfile() {
         breadcrumb={pageHeader.breadcrumb}
       ></PageHeader>
 
-      <UpdateProfileConfig userDetails={userDetails} />
+      <UpdateProfileConfig
+        userDetails={userDetails}
+        businessCategories={businessCategories}
+      />
     </>
   );
 }

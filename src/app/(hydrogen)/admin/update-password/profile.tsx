@@ -7,7 +7,11 @@ import { Password } from '@/components/ui/password';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import toast from 'react-hot-toast';
-import { signInWithEmailAndPassword, updatePassword } from 'firebase/auth';
+import {
+  useAuthState,
+  useUpdatePassword,
+  useSignInWithEmailAndPassword,
+} from 'react-firebase-hooks/auth';
 
 const initialValues = {
   currentPassword: '',
@@ -16,7 +20,10 @@ const initialValues = {
 
 export default function UpdatePassword() {
   const [loading, setLoading] = useState(false);
-  const user = auth.currentUser;
+  const [updatePassword] = useUpdatePassword(auth);
+  const [signInWithEmailAndPassword] = useSignInWithEmailAndPassword(auth);
+
+  const [user] = useAuthState(auth);
 
   const {
     register,
@@ -39,9 +46,9 @@ export default function UpdatePassword() {
     try {
       setLoading(true);
 
-      await signInWithEmailAndPassword(auth, user.email, data.currentPassword);
+      await signInWithEmailAndPassword(user?.email, data?.currentPassword);
 
-      await updatePassword(user, data.newPassword);
+      await updatePassword(data?.newPassword);
 
       reset(initialValues);
       toast.success(<Text>Password updated successfully</Text>);

@@ -32,12 +32,11 @@ export type AllOrderTypes = {
 };
 
 export default async function AdminOrders() {
-  const token = cookies().get('token');
+  const token = cookies().get('token')?.value;
 
   const fetchOptions = {
     headers: {
       Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
     },
   };
 

@@ -3,19 +3,12 @@ import React, { useState } from 'react';
 import FormGroup from '@/app/shared/form-group';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import {
-  MdOutlineClose,
-  MdOutlineEdit,
-} from 'react-icons/md';
+import { MdOutlineClose, MdOutlineEdit } from 'react-icons/md';
 import { auth } from '@/config/firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import toast from 'react-hot-toast';
 
-import {
-  Modal,
-  Text,
-  ActionIcon,
-} from 'rizzui';
+import { Modal, Text, ActionIcon } from 'rizzui';
 
 type ProductConfigType = {
   title: string;
@@ -39,7 +32,6 @@ export const ProductConfig = ({
   name,
   items,
 }: ProductConfigType): React.ReactElement => {
-  console.log('whait', items);
   return (
     <div className="border-b pb-4 md:w-full md:rounded-md md:border-b-0  md:pb-0">
       <FormGroup
@@ -72,7 +64,7 @@ export const ProductConfig = ({
 
       <div className="h-64 overflow-auto">
         {[1, 1, 1, 1, 1].map((i, index) => (
-          <ListConfigDetails key={i}/>
+          <ListConfigDetails key={i} />
         ))}
       </div>
     </div>
@@ -90,15 +82,14 @@ export const ListConfigDetails = ({
 }) => {
   return (
     <div className="my-4 flex h-12 w-full items-center justify-between rounded border px-4 shadow">
-  <div className="flex items-center">
-    <span className="mr-4">{index + 1}</span>
-    <span>{name}</span>
-  </div>
-  <div className="flex h-2/3 w-auto items-center gap-6">
-    <EditConfigList />
-  </div>
-</div>
-
+      <div className="flex items-center">
+        <span className="mr-4">{index + 1}</span>
+        <span>{name}</span>
+      </div>
+      <div className="flex h-2/3 w-auto items-center gap-6">
+        <EditConfigList />
+      </div>
+    </div>
   );
 };
 

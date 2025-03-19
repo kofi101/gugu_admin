@@ -185,9 +185,7 @@ export const OrdersManagement = ({
               <th className="border-b bg-gray-100 px-4 py-2 text-sm font-semibold uppercase text-gray-600">
                 Item Total (GHC)
               </th>
-              <th className="border-b bg-gray-100 px-4 py-2 text-sm font-semibold uppercase text-gray-600">
-                Discount (GHC)
-              </th>
+
               <th className="border-b bg-gray-100 px-4 py-2 text-sm font-semibold uppercase text-gray-600">
                 Shipping Cost (GHC)
               </th>
@@ -197,13 +195,16 @@ export const OrdersManagement = ({
               <th className="border-b bg-gray-100 px-4 py-2 text-sm font-semibold uppercase text-gray-600">
                 Order Status
               </th>
+              <th className="border-b bg-gray-100 px-4 py-2 text-sm font-semibold uppercase text-gray-600">
+                {/* Order Status */}
+              </th>
             </tr>
           </thead>
 
           <tbody>
             {Array.isArray(currentItems) &&
               sortBy(currentItems, 'transactionDate', 'desc')?.map((order) => (
-                <tr className="" key={order.orderNumber}>
+                <tr key={order.orderNumber}>
                   <td className="border-b px-4 py-4 text-sm text-gray-700">
                     {order.orderNumber}
                   </td>
@@ -219,9 +220,7 @@ export const OrdersManagement = ({
                   <td className="border-b px-4 py-4 text-sm text-gray-700">
                     {order.itemTotal.toFixed(2)}
                   </td>
-                  <td className="border-b px-4 py-4 text-sm text-gray-700">
-                    {order.discount.toFixed(2)}
-                  </td>
+
                   <td className="border-b px-4 py-4 text-sm text-gray-700">
                     {order.shippingCost.toFixed(2)}
                   </td>
@@ -232,6 +231,15 @@ export const OrdersManagement = ({
                     {order.orderStatus === 'OutforDelivery'
                       ? 'Out for Delivery'
                       : order.orderStatus}
+                  </td>
+
+                  <td className="border-b px-4 py-4 text-sm text-gray-700">
+                    <a
+                      href={`/admin/orders/${order.customerId}/${order.orderNumber}`}
+                      className="whitespace-nowrap rounded-lg text-sm underline hover:text-primary"
+                    >
+                      View Details
+                    </a>
                   </td>
                 </tr>
               ))}

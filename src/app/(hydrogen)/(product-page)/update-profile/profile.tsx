@@ -1,52 +1,55 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { SubmitHandler, useForm } from 'react-hook-form';
 import { auth } from '@/config/firebase';
-import { Password } from '@/components/ui/password';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
 import { FileInput } from '@/components/ui/file-input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { SignUpSchema, signUpSchema } from '@/utils/validators/signup.schema';
-import { baseUrl, managementUrl } from '@/config/base-url';
+import { baseUrl } from '@/config/base-url';
 import toast from 'react-hot-toast';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuthState } from 'react-firebase-hooks/auth';
+import { UserProfileType } from './user-details.type';
+import { getUserToken } from '@/utils/get-token';
 
-const initialValues = {
-  businessName: '',
-  businessPhone: '',
-  email: '',
-  password: '',
-  category: '',
-  address: '',
-  file: '',
-  confirmPassword: '',
-  isAgreed: false,
-};
-
-export default function UpdateProfileComponent({ userDetails }) {
+export default function UpdateProfileComponent({
+  userDetails,
+  businessCategories,
+}: {
+  businessCategories: Array<{
+    businessCategoryId: number;
+    businessCategory: string;
+  }>;
+  userDetails: UserProfileType;
+}) {
   const [files, setFiles] = useState<File>();
   const [category, setCategory] = useState('');
   const [fileError, setFileError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [businessCategory, setBusinessCategory] = useState([]);
 
   const [user] = useAuthState(auth);
 
+  const userBusinessCatId = businessCategories?.find(
+    (item) => item?.businessCategory == userDetails?.businessCategory
+  )?.businessCategoryId;
+
   const {
-    setError,
     setValue,
     register,
     handleSubmit,
     reset,
     formState: { errors },
   } = useForm({
-    resolver: zodResolver(signUpSchema),
-    defaultValues: initialValues,
+    defaultValues: {
+      businessName: userDetails.fullName,
+      businessPhone: userDetails.phoneNumber,
+      email: userDetails.email,
+      category: userBusinessCatId,
+      address: userDetails.address,
+    },
   });
 
   const documentFileExtensions = [
@@ -62,39 +65,29 @@ export default function UpdateProfileComponent({ userDetails }) {
     'xlsx',
   ];
 
-  const onSubmit: SubmitHandler<SignUpSchema> = async (data) => {
+  const onSubmit: SubmitHandler = async (data) => {
     try {
-      if (!files) {
-        setFileError(
-          'Please attach business document(doc,docx,pdf,txt,ppt,xls,)'
-        );
-        return;
-      }
-      if (!data.category) {
-        setError('category', {
-          type: 'manual',
-          message: 'Select business category',
-        });
-        return;
-      }
-
       setLoading(true);
 
-      const fileForm = new FormData();
-      fileForm.append('files', files);
-      const fileUploadRes = await fetch(
-        `${baseUrl}/FilesManager/UploadFileDocuments`,
-        {
-          method: 'POST',
-          body: fileForm,
+      let fileUrlPath;
+
+      if (files) {
+        const fileForm = new FormData();
+        fileForm.append('files', files);
+        const fileUploadRes = await fetch(
+          `${baseUrl}/FilesManager/UploadFileDocuments`,
+          {
+            method: 'POST',
+            body: fileForm,
+          }
+        );
+
+        if (!fileUploadRes.ok) {
+          throw new Error('Failed to upload business document.');
         }
-      );
 
-      if (!fileUploadRes.ok) {
-        throw new Error('Failed to upload business document.');
+        fileUrlPath = await fileUploadRes.json()?.path;
       }
-
-      const fileUpload = await fileUploadRes.json();
 
       const userBody = {
         userType: 'Merchant',
@@ -104,17 +97,22 @@ export default function UpdateProfileComponent({ userDetails }) {
         email: data.email,
         address: data.address,
         shipping_BillingAddress: data.address,
-        businessCategoryId: data.category,
-        businessDocument: fileUpload?.path,
+        businessCategoryId: data.category || userBusinessCatId,
+        businessDocument: fileUrlPath || userDetails?.businessDocument,
         firebaseId: user?.uid,
         modifiedBy: user?.uid,
-        registrationDate: new Date(Date.now()).toISOString(),
+        registrationDate: userDetails?.registrationDate,
       };
+
+      const token = await getUserToken();
 
       const dbUserRes = await fetch(`${baseUrl}/User/UpdateUserDetails`, {
         method: 'PUT',
         body: JSON.stringify(userBody),
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + token,
+        },
       });
 
       if (!dbUserRes.ok) {
@@ -157,23 +155,13 @@ export default function UpdateProfileComponent({ userDetails }) {
 
   const handleCategory = (event: { label: string; value: string }) => {
     setCategory(event.value);
-    setValue('category', event.value.toString());
+    setValue('category', Number(event?.value));
   };
 
-  async function getBusinessCategory() {
-    const res = await fetch(`${managementUrl}/BusinessCategories`);
-    const categoryData = await res.json();
-    setBusinessCategory(categoryData);
-  }
-
-  const catOptions = businessCategory?.map((item) => ({
+  const catOptions = businessCategories?.map((item) => ({
     value: item?.businessCategoryId,
     label: item?.businessCategory,
   }));
-
-  useEffect(() => {
-    getBusinessCategory();
-  }, []);
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="w-full max-w-xl">

@@ -37,8 +37,6 @@ export default function SignInForm() {
         data.password
       );
 
-      console.log('what here', signInRes);
-
       const token = signInRes?.user?.accessToken;
       const userUId = signInRes?.user?.uid;
 

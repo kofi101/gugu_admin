@@ -46,7 +46,6 @@ const filterOptions = ['5 D', '2 W', '1 M', '6 M', '1 Y'];
 
 export default function ProfitWidget({ className }: { className?: string }) {
   function handleFilterBy(data: string) {
-    console.log('Profit Filter:', data);
   }
 
   return (

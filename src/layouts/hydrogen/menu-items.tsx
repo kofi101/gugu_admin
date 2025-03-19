@@ -61,7 +61,7 @@ export const merchantMenuItems = [
   },
 
   {
-    name: 'Accounts',
+    name: 'Profile',
     href: '/update-profile',
     icon: <MdManageAccounts />,
     badge: '',
