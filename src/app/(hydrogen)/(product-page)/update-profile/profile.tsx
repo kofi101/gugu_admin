@@ -1,12 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { SubmitHandler, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { auth } from '@/config/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
-import { FileInput } from '@/components/ui/file-input';
 import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { baseUrl } from '@/config/base-url';
@@ -14,6 +13,7 @@ import toast from 'react-hot-toast';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { UserProfileType } from './user-details.type';
 import { getUserToken } from '@/utils/get-token';
+import { useRouter } from 'next/navigation';
 
 export default function UpdateProfileComponent({
   userDetails,
@@ -25,13 +25,12 @@ export default function UpdateProfileComponent({
   }>;
   userDetails: UserProfileType;
 }) {
-  const [files, setFiles] = useState<File>();
   const [category, setCategory] = useState('');
-  const [fileError, setFileError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const [user] = useAuthState(auth);
 
+  const router = useRouter();
   const userBusinessCatId = businessCategories?.find(
     (item) => item?.businessCategory == userDetails?.businessCategory
   )?.businessCategoryId;
@@ -44,50 +43,17 @@ export default function UpdateProfileComponent({
     formState: { errors },
   } = useForm({
     defaultValues: {
-      businessName: userDetails.fullName,
-      businessPhone: userDetails.phoneNumber,
-      email: userDetails.email,
+      businessName: userDetails?.fullName,
+      businessPhone: userDetails?.phoneNumber,
+      email: userDetails?.email,
       category: userBusinessCatId,
-      address: userDetails.address,
+      address: userDetails?.address,
     },
   });
 
-  const documentFileExtensions = [
-    'doc',
-    'docx',
-    'pdf',
-    'txt',
-    'rtf',
-    'odt',
-    'ppt',
-    'pptx',
-    'xls',
-    'xlsx',
-  ];
-
-  const onSubmit: SubmitHandler = async (data) => {
+  const onSubmit = async (data) => {
     try {
       setLoading(true);
-
-      let fileUrlPath;
-
-      if (files) {
-        const fileForm = new FormData();
-        fileForm.append('files', files);
-        const fileUploadRes = await fetch(
-          `${baseUrl}/FilesManager/UploadFileDocuments`,
-          {
-            method: 'POST',
-            body: fileForm,
-          }
-        );
-
-        if (!fileUploadRes.ok) {
-          throw new Error('Failed to upload business document.');
-        }
-
-        fileUrlPath = await fileUploadRes.json()?.path;
-      }
 
       const userBody = {
         userType: 'Merchant',
@@ -98,7 +64,7 @@ export default function UpdateProfileComponent({
         address: data.address,
         shipping_BillingAddress: data.address,
         businessCategoryId: data.category || userBusinessCatId,
-        businessDocument: fileUrlPath || userDetails?.businessDocument,
+        businessDocument: userDetails?.businessDocument,
         firebaseId: user?.uid,
         modifiedBy: user?.uid,
         registrationDate: userDetails?.registrationDate,
@@ -122,7 +88,7 @@ export default function UpdateProfileComponent({
       reset();
 
       toast.success(<Text>Account updated successfully</Text>);
-
+      router.refresh();
       setLoading(false);
     } catch (error) {
       setLoading(false);
@@ -130,28 +96,6 @@ export default function UpdateProfileComponent({
       toast.error(<Text>Something went wrong updating your account</Text>);
     }
   };
-
-  const isFileTypeAllowed = (
-    fileName: string,
-    allowedExtensions: Array<string>
-  ): boolean => {
-    const fileExtension =
-      fileName && fileName.split('.')[1]?.toLocaleLowerCase();
-
-    return !!fileExtension && allowedExtensions.includes(fileExtension);
-  };
-
-  function handleFileSelection(event: React.ChangeEvent<HTMLInputElement>) {
-    const uploadedFile = (event?.target as HTMLInputElement)?.files[0];
-    if (!isFileTypeAllowed(uploadedFile?.name, documentFileExtensions)) {
-      return setFileError(
-        'Please select a document format(doc,docx,pdf,txt,ppt)'
-      );
-    }
-
-    setFiles(uploadedFile);
-    setFileError('');
-  }
 
   const handleCategory = (event: { label: string; value: string }) => {
     setCategory(event.value);
@@ -215,19 +159,9 @@ export default function UpdateProfileComponent({
           error={errors.address?.message}
         />
 
-        {/* Business Document (Full Width) */}
-        <FileInput
-          label="Proof of business document (doc, pdf, txt, ppt)"
-          placeholder="Upload Business Document"
-          className="col-span-2"
-          error={fileError}
-          onChange={(event) => handleFileSelection(event)}
-        />
-
         {/* Submit Button (Full Width) */}
 
         <Button
-          disabled={!!fileError}
           isLoading={loading}
           size="lg"
           type="submit"

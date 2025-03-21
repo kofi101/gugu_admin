@@ -150,10 +150,11 @@ export default function SignUpForm() {
         <Text>
           Verification email sent. Please check your inbox and verify.
           <br />
-          We will receive your request and will respond soon.
+          Your request has been received and under review, we will respond soon.
           <br />
           Best Regards, GUGU Team
-        </Text>
+        </Text>,
+        { duration: 6000 }
       );
 
       setLoading(false);
