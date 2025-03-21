@@ -23,8 +23,10 @@ export default async function UpdateProfile() {
   const userId = cookies()?.get('userId')?.value;
 
   let userDetails;
-
   let businessCategories;
+  let mobileNetworks;
+  let paymentOptions;
+  let merchantPayment;
 
   try {
     if (!token || !userId) {
@@ -37,12 +39,27 @@ export default async function UpdateProfile() {
       },
     };
 
-    const categoryRes = await fetch(`${managementUrl}/BusinessCategories`);
+    businessCategories = await fetch(
+      `${managementUrl}/BusinessCategories`
+    )?.then((res) => res.json());
 
-    businessCategories = await categoryRes.json();
+    merchantPayment = await fetch(
+      `${baseUrl}/User/GetMerchantPaymentOptions/${userId}`,
+      fetchOptions
+    )?.then((res) => res.json());
 
     userDetails = await fetch(
       `${baseUrl}/User/GetUserDetails/${userId}`,
+      fetchOptions
+    ).then((res) => res.json());
+
+    mobileNetworks = await fetch(
+      `${baseUrl}/User/MobileNetworks`,
+      fetchOptions
+    ).then((res) => res.json());
+
+    paymentOptions = await fetch(
+      `${baseUrl}/User/PaymentOptions`,
       fetchOptions
     ).then((res) => res.json());
   } catch (error) {
@@ -59,6 +76,9 @@ export default async function UpdateProfile() {
       <UpdateProfileConfig
         userDetails={userDetails}
         businessCategories={businessCategories}
+        paymentOptions={paymentOptions}
+        mobileNetworks={mobileNetworks}
+        merchantPayment={merchantPayment}
       />
     </>
   );

@@ -7,7 +7,7 @@ import { Password } from '@/components/ui/password';
 import { Button } from '@/components/ui/button';
 import { Text } from '@/components/ui/text';
 import toast from 'react-hot-toast';
-// import { signInWithEmailAndPassword, updatePassword } from 'firebase/auth';
+
 import {
   useAuthState,
   useUpdatePassword,

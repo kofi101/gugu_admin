@@ -4,33 +4,39 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Password } from '@/components/ui/password';
-import { SubmitHandler } from 'react-hook-form';
 import { Form } from '@/components/ui/form';
 import { Text } from '@/components/ui/text';
 import { routes } from '@/config/routes';
-import {
-  resetPasswordSchema,
-  ResetPasswordSchema,
-} from '@/utils/validators/reset-password.schema';
+import { useSendPasswordResetEmail } from 'react-firebase-hooks/auth';
+import { auth } from '@/config/firebase';
+import toast from 'react-hot-toast';
 
 const initialValues = {
   email: '',
-  password: '',
-  confirmPassword: '',
 };
 
 export default function ForgetPasswordForm() {
   const [reset, setReset] = useState({});
 
-  const onSubmit: SubmitHandler<ResetPasswordSchema> = (data) => {
-    setReset(initialValues);
+  const [sendPasswordResetEmail, sending, error] =
+    useSendPasswordResetEmail(auth);
+
+  const onSubmit = async (data) => {
+    try {
+      sendPasswordResetEmail(data.email);
+      setReset(initialValues);
+
+      toast.success(<Text>Password reset mail sent to your email</Text>);
+    } catch (error) {
+      toast.error(
+        <Text>Something went wrong sending you password reset link</Text>
+      );
+    }
   };
 
   return (
-    <>
-      <Form<ResetPasswordSchema>
-        validationSchema={resetPasswordSchema}
+    <div className="mx-auto mt-10 max-w-lg md:mt-36">
+      <Form
         resetValues={reset}
         onSubmit={onSubmit}
         useFormProps={{
@@ -48,29 +54,19 @@ export default function ForgetPasswordForm() {
               placeholder="Enter your email"
               className="[&>label>span]:font-medium"
               inputClassName="text-sm"
-              {...register('email')}
+              {...register('email', {
+                required: 'Provide a password reset link',
+              })}
               error={errors.email?.message}
             />
-            <Password
-              label="Password"
-              placeholder="Enter your password"
+
+            <Button
+              isLoading={sending}
+              className="mt-2 w-full"
+              type="submit"
               size="lg"
-              className="[&>label>span]:font-medium"
-              inputClassName="text-sm"
-              {...register('password')}
-              error={errors.password?.message}
-            />
-            <Password
-              label="Confirm Password"
-              placeholder="Enter confirm password"
-              size="lg"
-              className="[&>label>span]:font-medium"
-              inputClassName="text-sm"
-              {...register('confirmPassword')}
-              error={errors.confirmPassword?.message}
-            />
-            <Button className="mt-2 w-full" type="submit" size="lg">
-              Reset Password
+            >
+              Get Password Reset Link
             </Button>
           </div>
         )}
@@ -84,6 +80,6 @@ export default function ForgetPasswordForm() {
           Sign In
         </Link>
       </Text>
-    </>
+    </div>
   );
 }

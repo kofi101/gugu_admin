@@ -105,20 +105,7 @@ export default function SignInForm() {
               {...register('password')}
               error={errors.password?.message}
             />
-            <div className="flex items-center justify-between pb-2">
-              {/* <Checkbox
-                {...register('rememberMe')}
-                label="Remember Me"
-                variant="flat"
-                className="[&>label>span]:font-medium"
-              /> */}
-              {/* <Link
-                href={routes.auth.forgotPassword1}
-                className="h-auto p-0 text-sm font-semibold text-blue underline transition-colors hover:text-gray-900 hover:no-underline"
-              >
-                Forget Password?
-              </Link> */}
-            </div>
+
             <Button
               isLoading={loading}
               className="w-full"
@@ -138,6 +125,15 @@ export default function SignInForm() {
           className="font-semibold text-gray-700 transition-colors hover:text-blue"
         >
           Sign Up
+        </Link>
+      </Text>
+      <Text className="mt-6 text-center text-sm leading-loose text-gray-500 lg:mt-8 lg:text-start">
+        Forgot password?{' '}
+        <Link
+          href="/auth/forgot-password"
+          className="font-semibold text-gray-700 transition-colors hover:text-blue"
+        >
+          Reset
         </Link>
       </Text>
     </>
