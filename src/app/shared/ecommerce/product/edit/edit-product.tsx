@@ -21,6 +21,7 @@ import { auth } from '@/config/firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { MdDeleteOutline } from 'react-icons/md';
 import { SpinnerLoader } from '@/components/ui/spinner';
+import { getUserToken } from '@/utils/get-token';
 
 interface IndexProps {
   //   slug?: string;
@@ -73,6 +74,8 @@ export default function EditProduct({ singleProduct, className }: IndexProps) {
   const [filesData, setFileData] = useState<Array<Array<File>>>([]);
   const [existingImages, setExistingImages] = useState<Array<string>>([]);
 
+  console.log('what her', singleProduct);
+
   const [user] = useAuthState(auth);
 
   const sendFiles = async (fileData: File) => {
@@ -89,43 +92,42 @@ export default function EditProduct({ singleProduct, className }: IndexProps) {
     return file;
   };
 
-  const methods = useForm<CreateProductInput>({
-    resolver: zodResolver(editProductFormSchema),
-  });
-
+  const methods = useForm();
 
   useEffect(() => {
     if (singleProduct && singleProduct.length > 0) {
       methods.reset({
-        productName: singleProduct[0]?.productName,
-        productCode: singleProduct[0]?.productCode,
-        category: singleProduct[0]?.productCategory,
-        brand: singleProduct[0]?.brand,
-        size: singleProduct[0]?.size,
-        color: singleProduct[0]?.colour,
-        material: singleProduct[0]?.material,
-        subCategory: singleProduct[0]?.productSubCategory,
-        description: singleProduct[0]?.productDescription,
-        price: singleProduct[0]?.salesPrice,
-        promotionPrice: singleProduct[0]?.promotionPrice,
-        discountPercentage: singleProduct[0]?.discountPercentage,
-        quantity: singleProduct[0]?.quantity,
-        promotion: singleProduct[0]?.isPromotion === 'Yes' ? true : false,
-        discount: singleProduct[0]?.isDiscount === 'Yes' ? true : false,
-        featured: singleProduct[0]?.isFeature === 'Yes' ? true : false,
-        weight: singleProduct[0]?.weight,
+        productName: singleProduct?.[0]?.productName,
+        productCode: singleProduct?.[0]?.productCode,
+        category: singleProduct?.[0]?.productCategory,
+        brand: singleProduct?.[0]?.brand,
+        size: singleProduct?.[0]?.size,
+        color: singleProduct?.[0]?.colour,
+        material: singleProduct?.[0]?.material,
+        subCategory: singleProduct?.[0]?.productSubCategory,
+        description: singleProduct?.[0]?.productDescription,
+        price: singleProduct?.[0]?.salesPrice,
+        promotionPrice: singleProduct?.[0]?.promotionPrice,
+        discountPercentage: singleProduct?.[0]?.discountPercentage,
+        quantity: singleProduct?.[0]?.quantity,
+        promotion: singleProduct?.[0]?.isPromotion === 'Yes' ? true : false,
+        discount: singleProduct?.[0]?.isDiscount === 'Yes' ? true : false,
+        featured: singleProduct?.[0]?.isFeature === 'Yes' ? true : false,
+        weight: singleProduct?.[0]?.weight,
       });
     }
   }, [singleProduct]);
 
   useEffect(() => {
     setExistingImages(
-      singleProduct[0]?.productImages.filter((image: string) => image)
+      singleProduct?.[0]?.productImages.filter((image: string) => image)
     );
   }, [singleProduct]);
 
   const onSubmit: SubmitHandler<CreateProductInput> = async (data) => {
     setLoading(true);
+
+    console.log('ahe heat', data);
 
     const uploadFiles =
       filesData.length > 0 &&
@@ -152,7 +154,7 @@ export default function EditProduct({ singleProduct, className }: IndexProps) {
     ];
 
     const formBody: FormBodyData = {
-      productId: singleProduct[0]?.productId,
+      productId: singleProduct?.[0]?.productId,
       productCategoryId: Number(data.category),
       productSubCategoryId: Number(data.subCategory),
       brandId: Number(data.brand),
@@ -163,26 +165,29 @@ export default function EditProduct({ singleProduct, className }: IndexProps) {
       promotionPrice: Number(data.promotionPrice),
       isDiscount: data.discount ? 1 : 0,
       discountPercentage: Number(data.discountPercentage),
-      modifiedBy: user?.uid,
+      modifiedBy: user?.uid || '',
       productDetails: productDetails,
     };
 
+    console.log('form body', formBody)
+
     try {
+      const token = await getUserToken();
       const res = await fetch(`${merchantUrl}/ModifyProduct`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: 'Bearer ' + token,
         },
         body: JSON.stringify(formBody),
       });
 
       if (!res.ok) {
+        setLoading(false);
         return toast.error(
           <Text as="b">Failed to update product, please try again</Text>
         );
       }
-
-      
 
       methods.reset();
 
@@ -238,7 +243,6 @@ export default function EditProduct({ singleProduct, className }: IndexProps) {
 }
 
 const fileDataMapper = (fileData: Array<string>) => {
-
   const result = [
     {
       imageOne: '',

@@ -14,6 +14,7 @@ import PencilIcon from '@/components/icons/pencil';
 import AvatarCard from '@/components/ui/avatar-card';
 import { ProductType } from '@/data/products-data';
 import { PiStarFill } from 'react-icons/pi';
+import { FaEye } from 'react-icons/fa';
 import DeletePopover from '@/app/shared/delete-popover';
 
 // get status badge
@@ -201,13 +202,26 @@ export const getColumns = ({
       <Text className="font-medium text-gray-700">GHC {value}</Text>
     ),
   },
-  // {
-  //   title: <HeaderCell title="Rating" />,
-  //   dataIndex: 'rating',
-  //   key: 'rating',
-  //   width: 200,
-  //   render: (rating: number[]) => getRating(rating),
-  // },
+
+  {
+    title: (
+      <HeaderCell
+        title="Promotion "
+        sortable
+        ascending={
+          sortConfig?.direction === 'asc' && sortConfig?.key === 'promotion'
+        }
+      />
+    ),
+    onHeaderCell: () => onHeaderCellClick('promotion'),
+    dataIndex: 'promotion',
+    key: 'promotion',
+    width: 100,
+    render: (value: string) => (
+      <Text className="font-medium text-gray-700">GHC {value}</Text>
+    ),
+  },
+
   {
     title: <HeaderCell title="Status" />,
     dataIndex: 'status',
@@ -229,9 +243,21 @@ export const getColumns = ({
           placement="top"
           color="invert"
         >
-          <Link href={routes.eCommerce.ediProduct(row.sku)}>
+          <Link href={routes.eCommerce.ediProduct(row.id)}>
             <ActionIcon size="sm" variant="outline" aria-label={'Edit Product'}>
               <PencilIcon className="h-4 w-4" />
+            </ActionIcon>
+          </Link>
+        </Tooltip>
+        <Tooltip
+          size="sm"
+          content={'View details'}
+          placement="top"
+          color="invert"
+        >
+          <Link href={`/products/${row.id}`}>
+            <ActionIcon size="sm" variant="outline" aria-label={'View Details'}>
+              <FaEye className="h-4 w-4" />
             </ActionIcon>
           </Link>
         </Tooltip>

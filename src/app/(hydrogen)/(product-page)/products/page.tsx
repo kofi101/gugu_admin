@@ -8,7 +8,7 @@ import { fetchUtil } from '@/utils/fetch';
 import { cookies } from 'next/headers';
 
 const pageHeader = {
-  title: 'Products',
+  title: 'All Products',
   breadcrumb: [
     {
       href: '/products',
@@ -48,6 +48,7 @@ export default async function ProductsPage() {
       sku: item.productCode,
       status: item.status,
       stock: item.quantity,
+      promotion: item.promotionPrice,
     }));
 
   return (

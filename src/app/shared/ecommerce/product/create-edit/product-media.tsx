@@ -25,8 +25,8 @@ export default function ProductMedia({
 }: ProductMediaProps) {
   return (
     <FormGroup
-      title="Upload new product images"
-      description="Upload your product image gallery here"
+      title="Upload product images"
+      description="Please add a minimum of 3 product images"
       className={cn(className)}
     >
       <UploadZone

@@ -187,7 +187,7 @@ export default function CreateEditProduct({ slug, className }: IndexProps) {
           <div className="relative mb-10 grid gap-7 divide-y divide-dashed divide-gray-200 @2xl:gap-9 @3xl:gap-11">
             <LoaderBackdrop isLoading={isLoading} />
 
-            <>
+    
               <ProductSummary className="pt-7 @2xl:pt-9 @3xl:pt-11" />
               {productType === 'Variant' && (
                 <div className="flex items-center gap-10">
@@ -240,7 +240,7 @@ export default function CreateEditProduct({ slug, className }: IndexProps) {
                 )}
               </div>
               <FormPromotion className="pt-7 @2xl:pt-9 @3xl:pt-11" />
-            </>
+    
           </div>
 
           <FormFooter

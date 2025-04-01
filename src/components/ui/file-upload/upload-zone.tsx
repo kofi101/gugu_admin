@@ -103,7 +103,7 @@ export default function UploadZone({
           <input {...getInputProps()} />
           <UploadIcon className="h-12 w-12" />
           <Text className="text-base font-medium">
-            Drag and Drop or select filesData
+            Drag and Drop or select files
           </Text>
         </div>
 
