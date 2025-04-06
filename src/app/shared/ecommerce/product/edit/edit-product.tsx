@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, FormProvider, SubmitHandler } from 'react-hook-form';
 import cn from '@/utils/class-names';
 import { Text } from '@/components/ui/text';
@@ -11,20 +10,14 @@ import ProductMedia from '@/app/shared/ecommerce/product/create-edit/product-med
 import { FormPromotion } from '@/app/shared/ecommerce/product/create-edit/product-promotion';
 import ProductTaxonomies from '@/app/shared/ecommerce/product/create-edit/product-tags';
 import FormFooter from '@/components/form-footer';
-import { Button } from '@/components/ui/button';
-import {
-  CreateProductInput,
-  editProductFormSchema,
-} from '@/utils/validators/create-product.schema';
+import { CreateProductInput } from '@/utils/validators/create-product.schema';
 import { fileUrl, merchantUrl } from '@/config/base-url';
 import { auth } from '@/config/firebase';
 import { useAuthState } from 'react-firebase-hooks/auth';
-import { MdDeleteOutline } from 'react-icons/md';
-import { SpinnerLoader } from '@/components/ui/spinner';
 import { getUserToken } from '@/utils/get-token';
+import { useRouter } from 'next/navigation';
 
 interface IndexProps {
-  //   slug?: string;
   className?: string;
   singleProduct?: Array<CreateProductInput>;
 }
@@ -74,7 +67,7 @@ export default function EditProduct({ singleProduct, className }: IndexProps) {
   const [filesData, setFileData] = useState<Array<Array<File>>>([]);
   const [existingImages, setExistingImages] = useState<Array<string>>([]);
 
-  console.log('what her', singleProduct);
+  const router = useRouter();
 
   const [user] = useAuthState(auth);
 
@@ -99,12 +92,12 @@ export default function EditProduct({ singleProduct, className }: IndexProps) {
       methods.reset({
         productName: singleProduct?.[0]?.productName,
         productCode: singleProduct?.[0]?.productCode,
-        category: singleProduct?.[0]?.productCategory,
-        brand: singleProduct?.[0]?.brand,
-        size: singleProduct?.[0]?.size,
-        color: singleProduct?.[0]?.colour,
-        material: singleProduct?.[0]?.material,
-        subCategory: singleProduct?.[0]?.productSubCategory,
+        category: singleProduct?.[0]?.productCategoryId,
+        brand: singleProduct?.[0]?.brandId,
+        size: singleProduct?.[0]?.sizeId,
+        color: singleProduct?.[0]?.colourId,
+        material: singleProduct?.[0]?.materialId,
+        subCategory: singleProduct?.[0]?.productSubCategoryId,
         description: singleProduct?.[0]?.productDescription,
         price: singleProduct?.[0]?.salesPrice,
         promotionPrice: singleProduct?.[0]?.promotionPrice,
@@ -120,21 +113,19 @@ export default function EditProduct({ singleProduct, className }: IndexProps) {
 
   useEffect(() => {
     setExistingImages(
-      singleProduct?.[0]?.productImages.filter((image: string) => image)
+      singleProduct?.[0]?.productImages?.filter((image: string) => image)
     );
   }, [singleProduct]);
 
   const onSubmit: SubmitHandler<CreateProductInput> = async (data) => {
     setLoading(true);
 
-    console.log('ahe heat', data);
-
     const uploadFiles =
       filesData.length > 0 &&
       (await Promise.allSettled(filesData[0]?.map((file) => sendFiles(file))));
 
     const promiseFiles =
-      uploadFiles && uploadFiles?.map((item) => item?.value.path);
+      uploadFiles && uploadFiles?.map((item) => item?.value?.path);
 
     const mappedFiles = fileDataMapper(
       existingImages.concat(promiseFiles || [])
@@ -145,7 +136,7 @@ export default function EditProduct({ singleProduct, className }: IndexProps) {
         sizeId: Number(data.size),
         colourId: Number(data.color),
         materialId: Number(data.material),
-        productDescription: data.description,
+        productDescription: data.description || '',
         quantity: Number(data.quantity),
         salesPrice: Number(data.price),
         weight: Number(data.weight),
@@ -169,8 +160,6 @@ export default function EditProduct({ singleProduct, className }: IndexProps) {
       productDetails: productDetails,
     };
 
-    console.log('form body', formBody)
-
     try {
       const token = await getUserToken();
       const res = await fetch(`${merchantUrl}/ModifyProduct`, {
@@ -193,7 +182,7 @@ export default function EditProduct({ singleProduct, className }: IndexProps) {
 
       setFileData([]);
       setExistingImages([]);
-
+      router.refresh();
       toast.success(<Text as="b">Product successfully updated</Text>);
       setLoading(false);
     } catch (err) {
@@ -301,6 +290,5 @@ const fileDataMapper = (fileData: Array<string>) => {
 export const FormLoader = () => (
   <div className="back absolute z-50 h-[200vh] w-[100vw] backdrop-blur-sm backdrop-opacity-70">
     {' '}
-    hteseit
   </div>
 );

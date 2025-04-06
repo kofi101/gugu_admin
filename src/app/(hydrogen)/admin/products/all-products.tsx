@@ -41,7 +41,7 @@ export type Product = {
   isDeleted: string;
 };
 
-type ProductStatus = 'Pending' | 'All' | 'Approved';
+type ProductStatus = 'Pending' | 'All' | 'Approved'| 'Rejected';
 
 const getProductStatus = (status: ProductStatus): string => {
   switch (status) {
@@ -49,7 +49,9 @@ const getProductStatus = (status: ProductStatus): string => {
       return 'PendingProducts';
 
     case 'Approved':
-      return 'Products/Approved';
+      return 'ApprovedProducts';
+    case 'Rejected':
+      return 'RejectedProducts';
 
     default:
       return 'Products';
@@ -130,6 +132,18 @@ export const ProductList = () => {
           >
             Pending Products
           </Button>
+          <Button
+            onClick={() => setFilter('Approved')}
+            variant={filter === 'Approved' ? 'solid' : 'outline'}
+          >
+            Approved Products
+          </Button>
+          <Button
+            onClick={() => setFilter('Rejected')}
+            variant={filter === 'Rejected' ? 'solid' : 'outline'}
+          >
+            Rejected Products
+          </Button>
         </div>
       </div>
 
@@ -208,6 +222,7 @@ export const ProductList = () => {
                     <ProcessProduct
                       productCode={product?.productCode}
                       productId={product?.productId}
+                      productName={product?.productName}
                     />
 
                     <span className="font-bold">{product?.status}</span>

@@ -45,7 +45,6 @@ export default async function EditProductPage({
         Authorization: 'Bearer ' + token,
       },
     });
-    
   } catch (err) {
     return toast.error(
       <Text as="b">Something went wrong, please try again</Text>
@@ -54,20 +53,10 @@ export default async function EditProductPage({
 
   return (
     <>
-      <PageHeader title={pageHeader.title} breadcrumb={pageHeader.breadcrumb}>
-        <Link
-          href={routes.eCommerce.createProduct}
-          className="mt-4 w-full @lg:mt-0 @lg:w-auto"
-        >
-          <Button
-            as="span"
-            className="w-full @lg:w-auto dark:bg-gray-100 dark:text-white dark:active:bg-gray-100"
-          >
-            <PiPlusBold className="me-1.5 h-[17px] w-[17px]" />
-            Edit Product
-          </Button>
-        </Link>
-      </PageHeader>
+      <PageHeader
+        title={pageHeader.title}
+        breadcrumb={pageHeader.breadcrumb}
+      ></PageHeader>
       {productDetails && <EditProduct singleProduct={productDetails} />}
     </>
   );
