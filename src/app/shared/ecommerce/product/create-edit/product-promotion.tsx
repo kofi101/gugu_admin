@@ -24,6 +24,7 @@ export const FormPromotion = ({ className }: { className?: string }) => {
         {...register('promotionPrice')}
         error={errors.promotionPrice?.message as string}
         type="number"
+        step={0.1}
       />
       <Input
         label="Discount (%)"

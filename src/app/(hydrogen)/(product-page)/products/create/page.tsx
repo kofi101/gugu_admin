@@ -13,7 +13,7 @@ const pageHeader = {
   breadcrumb: [
     {
       href: routes.eCommerce.products,
-      name: 'Products',
+      name: 'All Products',
     },
     {
       name: 'Create',

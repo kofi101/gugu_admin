@@ -15,9 +15,11 @@ import { Unauthorized } from '../../(product-page)/products/configs/config';
 export const ProcessProduct = ({
   productId,
   productCode,
+  productName,
 }: {
   productId?: number;
   productCode?: string;
+  productName?: string;
 }) => {
   const [modalState, setModalState] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -58,7 +60,8 @@ export const ProcessProduct = ({
         throw new Error(`Failed to approve product: ${response.statusText}`);
       }
 
-      const data = await response.json();
+      await response.json();
+      setModalState(false);
 
       toast.success('Product approved successfully');
     } catch (error) {
@@ -100,6 +103,7 @@ export const ProcessProduct = ({
       }
       reset();
       setRejectLoading(false);
+      setModalState(false);
       toast.success('Product rejected successfully');
     } catch (error) {
       toast.error('Failed to reject product');
@@ -121,7 +125,7 @@ export const ProcessProduct = ({
         <div className="relative m-auto h-44 px-7 pb-8 pt-6">
           <Title as="h6" className="mb-4 text-center">
             {' '}
-            Process Product
+            Process {productName} - {productCode}
           </Title>
           <ActionIcon
             size="sm"

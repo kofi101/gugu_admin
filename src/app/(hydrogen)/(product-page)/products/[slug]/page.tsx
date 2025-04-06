@@ -1,33 +1,60 @@
-import { routes } from '@/config/routes';
+import React from 'react';
 import PageHeader from '@/app/shared/page-header';
-// import ProductDetails from '@/app/shared/ecommerce/product/product-details';
-import { metaObject } from '@/config/site.config';
+import { routes } from '@/config/routes';
+import { fetchUtil } from '@/utils/fetch';
+import { merchantUrl } from '@/config/base-url';
+import toast from 'react-hot-toast';
+import { Text } from '@/components/ui/text';
+import { cookies } from 'next/headers';
+import RenderProductDetails from './details';
 
-export const metadata = {
-  ...metaObject('Product Details'),
+const pageHeader = {
+  title: 'Product Details',
+  breadcrumb: [
+    {
+      href: routes.eCommerce.products,
+      name: 'All Products',
+    },
+    {
+      name: 'Details',
+    },
+  ],
 };
 
-export default function ProductDetailsPage({ params }: any) {
-  const pageHeader = {
-    title: 'Shop',
-    breadcrumb: [
-      {
-        href: routes.eCommerce.dashboard,
-        name: 'E-Commerce',
+export default async function ProductDetailsPage({
+  params,
+}: {
+  params: { slug: string };
+}) {
+  const slug = params?.slug;
+
+  const cookieSet = cookies();
+  const token = cookieSet.get('token')?.value;
+  const userId = cookieSet.get('userId')?.value;
+
+  let productDetails;
+
+  const fetchSingleProductUrl = `${merchantUrl}/GetProduct/${userId}/${slug}`;
+  try {
+    productDetails = await fetchUtil(fetchSingleProductUrl, {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer ' + token,
       },
-      {
-        href: routes.eCommerce.shop,
-        name: 'Shop',
-      },
-      {
-        name: params.slug,
-      },
-    ],
-  };
+    });
+  } catch (err) {
+    return toast.error(
+      <Text as="b">Something went wrong, please try again</Text>
+    );
+  }
+
   return (
     <>
-      <PageHeader title={pageHeader.title} breadcrumb={pageHeader.breadcrumb} />
-      {/* <ProductDetails /> */}
+      <PageHeader
+        title={pageHeader.title}
+        breadcrumb={pageHeader.breadcrumb}
+      ></PageHeader>
+      {productDetails && <RenderProductDetails product={productDetails?.[0]} />}
     </>
   );
 }

@@ -23,7 +23,10 @@ export default function ForgetPasswordForm() {
 
   const onSubmit = async (data) => {
     try {
-      sendPasswordResetEmail(data.email);
+      sendPasswordResetEmail(data.email, {
+        url: 'https://gugu-admin.vercel.app/auth/sign-in',
+        handleCodeInApp: false,
+      });
       setReset(initialValues);
 
       toast.success(<Text>Password reset mail sent to your email</Text>);
