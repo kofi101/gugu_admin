@@ -7,8 +7,8 @@ export const productFormSchema = z.object({
   productType: z.enum(['Single', 'Variant'], {
     errorMap: (issue, ctx) => ({ message: 'Product type is required' }),
   }),
-  category: z.string().min(1, { message: 'Category is required' }),
-  brand: z.string().min(1, { message: 'Brand is required' }),
+  category: z.string(),
+  brand: z.string(),
   size: z.string().array().nonempty().min(1, { message: 'Size is required' }),
   color: z.string().array().nonempty().min(1, { message: 'Color is required' }),
   material: z
@@ -21,7 +21,7 @@ export const productFormSchema = z.object({
     .array()
     .nonempty()
     .min(1, { message: 'Weight is required' }),
-  subCategory: z.string().min(1, { message: 'Sub category is required' }),
+  subCategory: z.string(),
   description: z.string().array().nonempty().optional(),
   price: z.coerce
     .number()
@@ -43,13 +43,13 @@ export const productFormSchema = z.object({
 export const editProductFormSchema = z.object({
   productName: z.string().min(1, { message: 'Product name is required' }),
   productCode: z.string().min(1, { message: 'Product code is required' }),
-  category: z.string().min(1, { message: 'Category is required' }),
-  brand: z.string().min(1, { message: 'Brand is required' }),
+  category: z.string(),
+  brand: z.string(),
   size: z.string().min(1, { message: 'Size is required' }),
   color: z.string().min(1, { message: 'Color is required' }),
   material: z.string().min(1, { message: 'Material is required' }),
   weight: z.string().min(1, { message: 'Weight is required' }),
-  subCategory: z.string().min(1, { message: 'Sub category is required' }),
+  subCategory: z.string(),
   description: z.string().optional(),
   price: z.coerce.number().min(1, { message: 'Price is required' }),
   promotionPrice: z.coerce.number().optional(),
