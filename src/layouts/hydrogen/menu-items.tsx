@@ -12,6 +12,7 @@ import { FaRegMoneyBillAlt } from 'react-icons/fa';
 import { RiCoupon2Line, RiLockPasswordFill } from 'react-icons/ri';
 import { IoCartOutline, IoSettingsOutline } from 'react-icons/io5';
 import { FaMoneyBillTrendUp } from 'react-icons/fa6';
+import { GiReceiveMoney } from 'react-icons/gi';
 
 // Note: do not add href in the label object, it is rendering as label
 export const merchantMenuItems = [
@@ -100,6 +101,11 @@ export const adminMenuItems = [
     name: 'Taxes',
     href: '/admin/charges',
     icon: <FaRegMoneyBillAlt />,
+  },
+  {
+    name: 'Sales',
+    href: '/admin/sales',
+    icon: <GiReceiveMoney />,
   },
   {
     name: 'Business',

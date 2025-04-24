@@ -1,29 +1,29 @@
-import { CustomerReviews } from './review';
+import MerchantSalesByDate from './sales';
 import { metaObject } from '@/config/site.config';
 import PageHeader from '@/app/shared/page-header';
 
 export const metadata = {
-  ...metaObject('Reviews'),
+  ...metaObject('Sales'),
 };
 
 const pageHeader = {
-  title: 'Customer Reviews',
+  title: 'Merchant Sales',
   breadcrumb: [
     {
-      href: '/admin/reviews',
-      name: 'Customer reviews',
+      href: '/admin/sales',
+      name: 'Merchant sales',
     },
   ],
 };
 
-export default function CustomerReviewsPage() {
+export default function MerchantSales() {
   return (
     <>
       <PageHeader
         title={pageHeader.title}
         breadcrumb={pageHeader.breadcrumb}
       ></PageHeader>
-      <CustomerReviews />
+      <MerchantSalesByDate />
     </>
   );
 }
