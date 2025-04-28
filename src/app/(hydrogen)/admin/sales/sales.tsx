@@ -5,10 +5,17 @@ import { useEffect, useState } from 'react';
 import { managementUrl } from '@/config/base-url';
 import { getUserToken } from '@/utils/get-token';
 
+type SalesData = {
+  merchant: string;
+  merchantId: string;
+  phoneNumber: string;
+  totalSales: number;
+};
+
 export default function MerchantSales() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [salesData, setSalesData] = useState([]);
+  const [salesData, setSalesData] = useState<Array<SalesData>>([]);
   const [loading, setLoading] = useState(false);
 
   const fetchSales = async () => {
@@ -28,9 +35,7 @@ export default function MerchantSales() {
         fetchOptions
       );
       const data = await res.json();
-
-      console.log('Sales data:', data);
-      setSalesData(data || []);
+      setSalesData((data as Array<SalesData>) || []);
     } catch (error) {
       console.error('Failed to fetch sales:', error);
     } finally {
@@ -96,7 +101,7 @@ export default function MerchantSales() {
             ) : (
               salesData?.map((sale, index) => (
                 <tr key={index} className="hover:bg-gray-50">
-                  <td className="border-b p-2">{sale?.fullName}</td>
+                  <td className="border-b p-2">{sale?.merchant}</td>
                   <td className="border-b p-2">{sale?.phoneNumber}</td>
                   <td className="border-b p-2">
                     GHC {sale?.totalSales.toFixed(2)}
