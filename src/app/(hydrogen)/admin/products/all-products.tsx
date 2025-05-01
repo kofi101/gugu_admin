@@ -41,7 +41,7 @@ export type Product = {
   isDeleted: string;
 };
 
-type ProductStatus = 'Pending' | 'All' | 'Approved'| 'Rejected';
+type ProductStatus = 'Pending' | 'All' | 'Approved' | 'Rejected';
 
 const getProductStatus = (status: ProductStatus): string => {
   switch (status) {
@@ -151,7 +151,9 @@ export const ProductList = () => {
         <Select
           options={Array.from(
             new Set(products.map((product) => product.productCategory))
-          ).map((category) => ({ label: category, value: category }))}
+          )
+            .map((category) => ({ label: category, value: category }))
+            ?.filter((item) => item.label)}
           onChange={(selectedOption) =>
             setProductCategory(selectedOption?.value || null)
           }
