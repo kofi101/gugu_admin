@@ -25,7 +25,7 @@ export const metaObject = (
   description: string = siteConfig.description
 ): Metadata => {
   return {
-    title: title ? `${title} - Isomorphic Furyroad` : siteConfig.title,
+    title: title ? `${title} - Gugu` : siteConfig.title,
     description,
     openGraph: openGraph ?? {
       title: title ? `${title} - Gugu admin dashboard` : title,

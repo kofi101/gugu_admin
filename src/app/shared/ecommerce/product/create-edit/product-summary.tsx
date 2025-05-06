@@ -98,7 +98,11 @@ export default function ProductSummary({
       className={cn(className)}
     >
       <Input
-        label="Product Name"
+        label={
+          <span>
+            Product Name <span className="text-red-500">required *</span>
+          </span>
+        }
         placeholder="Enter your product name"
         {...register('productName')}
         error={errors.productName?.message as string}
@@ -107,7 +111,11 @@ export default function ProductSummary({
       />
       {!editMode && (
         <SelectComponent
-          labelText="Product Type"
+          labelText={
+            <span>
+              Product Type <span className="text-red-500">required *</span>
+            </span>
+          }
           options={productTypeOptions}
           placeholder="Choose your product type"
           error={errors?.productType?.message as string}
@@ -130,7 +138,12 @@ export default function ProductSummary({
         register={register('subCategory')}
       />
       <Input
-        label="Product Code"
+        label={
+          <span>
+            {' '}
+            Product Code <span className="text-red-500">required *</span>
+          </span>
+        }
         placeholder="Enter your product code"
         {...register('productCode')}
         error={errors.productCode?.message as string}
@@ -155,7 +168,7 @@ export const SelectComponent = ({
   placeholder,
   register,
 }: {
-  labelText: string;
+  labelText: React.ReactNode;
   options: Array<{ label: string; value: string }>;
   error: string;
   placeholder: string;
@@ -163,7 +176,7 @@ export const SelectComponent = ({
 }) => {
   return (
     <div className="flex  flex-col">
-      <label className="mb-1 text-sm font-medium" htmlFor={labelText}>
+      <label className="mb-1 text-sm font-medium" htmlFor={labelText as string}>
         {labelText}
       </label>
       <select

@@ -109,7 +109,12 @@ export default function ProductTags({
       />
 
       <Input
-        label="Weight (Kg)"
+        label={
+          <span>
+            {' '}
+            Weight (Kg) <span className="text-red-500">required *</span>
+          </span>
+        }
         type="number"
         placeholder="Enter product weight"
         {...register(`${editMode ? 'weight' : 'weight.' + index}`)}
