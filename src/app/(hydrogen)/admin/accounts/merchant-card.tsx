@@ -104,10 +104,10 @@ export const MerchantCard: React.FC<{
           <span className="font-semibold">Business Category:</span>{' '}
           {merchant.businessCategory}
         </p>
-        {/* <p className="text-sm">
+        <p className="text-sm">
           <span className="font-semibold">Registration Date:</span>{' '}
           {formatDate(merchant.registrationDate)}
-        </p> */}
+        </p>
         <p className="w-8/12 truncate text-sm">
           <span className="font-semibold">
             <ViewPDF file={merchant.businessDocument} />:

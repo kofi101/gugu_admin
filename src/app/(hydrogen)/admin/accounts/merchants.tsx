@@ -54,19 +54,21 @@ export const MerchantsPage = () => {
   const approvedMerchants = sortByDate(
     filterProducts(merchants, 'status', 'Confirmed'),
     'registrationDate',
-    'asc'
+    'desc'
   );
 
   const pendingMerchantsData = sortByDate(
     filterProducts(merchants, 'status', 'Unconfirmed'),
     'registrationDate',
-    'asc'
+    'desc'
   );
   const rejectedMerchants = sortByDate(
     filterProducts(merchants, 'status', 'Rejected'),
     'registrationDate',
-    'asc'
+    'desc'
   );
+
+  console.log('approved', approvedMerchants);
 
   return (
     <div className="w-full rounded-lg p-6">
