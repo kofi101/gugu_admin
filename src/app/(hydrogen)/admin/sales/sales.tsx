@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { managementUrl } from '@/config/base-url';
 import { getUserToken } from '@/utils/get-token';
+import Pagination from '@/components/pagination';
 
 type SalesData = {
   merchant: string;
@@ -17,6 +18,8 @@ export default function MerchantSales() {
   const [endDate, setEndDate] = useState('');
   const [salesData, setSalesData] = useState<Array<SalesData>>([]);
   const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 25;
 
   const fetchSales = async () => {
     const token = await getUserToken();
@@ -83,34 +86,45 @@ export default function MerchantSales() {
       {loading ? (
         <p className="text-gray-500">Loading sales data...</p>
       ) : (
-        <table className="w-full border-t text-sm">
-          <thead>
-            <tr className="bg-gray-50 text-left">
-              <th className="border-b p-2">Merchant</th>
-              <th className="border-b p-2">Phone Number</th>
-              <th className="border-b p-2">Total Sales</th>
-            </tr>
-          </thead>
-          <tbody>
-            {salesData?.length === 0 ? (
-              <tr>
-                <td colSpan={4} className="p-4 text-center text-gray-500">
-                  No sales in selected date range.
-                </td>
+        <>
+          <table className="w-full border-t text-sm">
+            <thead>
+              <tr className="bg-gray-50 text-left">
+                <th className="border-b p-2">Merchant</th>
+                <th className="border-b p-2">Phone Number</th>
+                <th className="border-b p-2">Total Sales</th>
               </tr>
-            ) : (
-              salesData?.map((sale, index) => (
-                <tr key={index} className="hover:bg-gray-50">
-                  <td className="border-b p-2">{sale?.merchant}</td>
-                  <td className="border-b p-2">{sale?.phoneNumber}</td>
-                  <td className="border-b p-2">
-                    GHC {sale?.totalSales.toFixed(2)}
+            </thead>
+            <tbody>
+              {salesData?.length === 0 ? (
+                <tr>
+                  <td colSpan={4} className="p-4 text-center text-gray-500">
+                    No sales in selected date range.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                salesData?.map((sale, index) => (
+                  <tr key={index} className="hover:bg-gray-50">
+                    <td className="border-b p-2">{sale?.merchant}</td>
+                    <td className="border-b p-2">{sale?.phoneNumber}</td>
+                    <td className="border-b p-2">
+                      GHC {sale?.totalSales.toFixed(2)}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+
+          <div className="flex justify-center">
+            <Pagination
+              totalItems={salesData?.length}
+              itemsPerPage={itemsPerPage}
+              currentPage={currentPage}
+              onPageChange={setCurrentPage}
+            />
+          </div>
+        </>
       )}
     </div>
   );

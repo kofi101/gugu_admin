@@ -4,15 +4,30 @@ import React from 'react';
 
 import Image from 'next/image';
 import { OrderDetailsProps } from './order-details.types';
+import { ProcessOrder } from './process-order';
 
 const OrderDetails: React.FC<OrderDetailsProps> = ({
   order,
   orderStatuses,
 }) => {
+  const currentOrderStatusNumber = orderStatuses?.find(
+    (status: { name: string }) =>
+      status.name === order?.orderSummary?.checkOutStatus
+  )?.id;
+
   return (
     <div className="w-full rounded-lg border bg-white p-6 shadow-md">
       {/* Order Summary */}
-      <h2 className="mb-4 text-xl font-semibold">Order Summary</h2>
+      <div className="flex w-full justify-between">
+        <h2 className="mb-4 text-xl font-semibold">Order Summary</h2>
+
+        <ProcessOrder
+          orderStatusNumber={currentOrderStatusNumber}
+          orderStatuses={orderStatuses}
+          orderNumber={order?.orderSummary.checkOutOrderNumber}
+        />
+      </div>
+
       <div className="grid grid-cols-2 gap-4 text-sm">
         <p>
           <strong>Order #:</strong> {order?.orderSummary.checkOutOrderNumber}
@@ -78,6 +93,7 @@ const OrderDetails: React.FC<OrderDetailsProps> = ({
                 src={item.imageOne}
                 alt={item.productName}
                 className="rounded object-cover"
+                fill
               />
             </div>
             <div className="flex-1 text-sm">
