@@ -5,12 +5,14 @@ import { useEffect, useState } from 'react';
 import { managementUrl } from '@/config/base-url';
 import { getUserToken } from '@/utils/get-token';
 import Pagination from '@/components/pagination';
+import { formatDate } from '@/utils/format-date';
 
 type SalesData = {
   merchant: string;
   merchantId: string;
   phoneNumber: string;
   totalSales: number;
+  transactionDate: string;
 };
 
 export default function MerchantSales() {
@@ -93,6 +95,7 @@ export default function MerchantSales() {
                 <th className="border-b p-2">Merchant</th>
                 <th className="border-b p-2">Phone Number</th>
                 <th className="border-b p-2">Total Sales</th>
+                <th className="border-b p-2">Date</th>
               </tr>
             </thead>
             <tbody>
@@ -109,6 +112,9 @@ export default function MerchantSales() {
                     <td className="border-b p-2">{sale?.phoneNumber}</td>
                     <td className="border-b p-2">
                       GHC {sale?.totalSales.toFixed(2)}
+                    </td>
+                    <td className="border-b p-2">
+                      {formatDate(sale?.transactionDate)}
                     </td>
                   </tr>
                 ))
