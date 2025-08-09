@@ -37,7 +37,6 @@ export default function ProductMedia({
         fileIndex={index}
         existingImages={existingImages}
         setExistingImages={setExistingImages}
-        // productImages={productImages}
       />
     </FormGroup>
   );

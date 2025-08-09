@@ -39,15 +39,18 @@ export default function UploadZone({
   setExistingImages,
 }: UploadZoneProps) {
   const onDrop = useCallback(
-    (acceptedFiles) => {
-      const files = [...filesData];
+    (acceptedFiles: File[]) => {
+      setFileData((prevFilesData) => {
+        const updatedFilesData = [...prevFilesData];
+        const currentFiles = updatedFilesData[fileIndex || 0] || [];
 
-      files[fileIndex] = acceptedFiles;
+        // Append new files instead of replacing
+        updatedFilesData[fileIndex || 0] = [...currentFiles, ...acceptedFiles];
 
-      setFileData(files);
+        return updatedFilesData;
+      });
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [filesData]
+    [fileIndex, setFileData]
   );
 
   function handleRemoveFile(index: number) {
