@@ -40,7 +40,7 @@ export const validateNewPassword = z
 
 export const validateConfirmPassword = z
   .string()
-  .min(8, { message: messages.confirmPasswordRequired })
+  .min(1, { message: messages.confirmPasswordRequired })
   .min(8, { message: messages.passwordLengthMin })
   .regex(new RegExp('.*[A-Z].*'), {
     message: messages.passwordOneUppercase,
