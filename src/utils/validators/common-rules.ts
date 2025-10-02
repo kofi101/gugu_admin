@@ -17,7 +17,7 @@ export const validateEmail = z
 export const validatePassword = z
   .string()
   .min(1, { message: messages.passwordRequired })
-  .min(6, { message: messages.passwordLengthMin })
+  .min(8, { message: messages.passwordLengthMin })
   .regex(new RegExp('.*[A-Z].*'), {
     message: messages.passwordOneUppercase,
   })
@@ -29,7 +29,7 @@ export const validatePassword = z
 export const validateNewPassword = z
   .string()
   .min(1, { message: messages.passwordRequired })
-  .min(6, { message: messages.passwordLengthMin })
+  .min(8, { message: messages.passwordLengthMin })
   .regex(new RegExp('.*[A-Z].*'), {
     message: messages.passwordOneUppercase,
   })
@@ -40,8 +40,8 @@ export const validateNewPassword = z
 
 export const validateConfirmPassword = z
   .string()
-  .min(1, { message: messages.confirmPasswordRequired })
-  .min(6, { message: messages.passwordLengthMin })
+  .min(8, { message: messages.confirmPasswordRequired })
+  .min(8, { message: messages.passwordLengthMin })
   .regex(new RegExp('.*[A-Z].*'), {
     message: messages.passwordOneUppercase,
   })
