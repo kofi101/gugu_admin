@@ -90,9 +90,9 @@ export default function CreateEditProduct({ slug, className }: IndexProps) {
         // Check if the variant has associated images
         if (!filesData[index]) {
           fileError = 'Add images to all product variants';
-        } else if (filesData[index].length < 3) {
+        } else if (filesData[index].length < 1) {
           // Ensure each variant has at least 3 images
-          fileError = 'Please select at least 3 product images';
+          fileError = 'Error, please select a product image';
         }
       });
 
