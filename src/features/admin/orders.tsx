@@ -35,7 +35,7 @@ export function AdminOrders() {
           <FilterTabs
             label="Filter by order status"
             value={status}
-            onChange={(v) => router.replace(v === 'all' ? '/admin/orders/' : `/admin/orders/?status=${v}`, { scroll: false })}
+            onChange={(v) => router.replace(v === 'all' ? '/admin/orders' : `/admin/orders?status=${v}`, { scroll: false })}
             options={[
               { value: 'all', label: 'All' },
               ...ORDER_STATUSES.map((s) => ({ value: s, label: STATUS_LABEL[s] })),

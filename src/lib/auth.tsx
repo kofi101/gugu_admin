@@ -94,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       // Memory cache only; nothing persisted.
     }
-    window.location.replace('/sign-in/');
+    window.location.replace('/sign-in');
   }, []);
 
   const refreshClaims = useCallback(async () => {

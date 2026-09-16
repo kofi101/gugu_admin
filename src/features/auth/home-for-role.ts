@@ -1,9 +1,9 @@
 import type { Role } from '@/lib/types';
 
 export function homeForRole(role: Role): string {
-  if (role === 'admin') return '/admin/';
-  if (role === 'merchant') return '/merchant/';
-  return '/no-access/';
+  if (role === 'admin') return '/admin';
+  if (role === 'merchant') return '/merchant';
+  return '/no-access';
 }
 
 /** Only same-origin paths inside the role's own area are honoured. */

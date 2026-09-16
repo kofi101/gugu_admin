@@ -11,7 +11,7 @@ export function NoAccessRoute() {
   const router = useRouter();
   const target =
     session.status === 'signed-out'
-      ? '/sign-in/'
+      ? '/sign-in'
       : session.status === 'signed-in' && session.role !== 'customer'
         ? homeForRole(session.role)
         : null;

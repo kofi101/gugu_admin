@@ -4,7 +4,7 @@ import type { NextConfig } from 'next';
 // route handlers, server actions or next/image optimisation.
 const nextConfig: NextConfig = {
   output: 'export',
-  trailingSlash: true,
+  trailingSlash: false,
   reactStrictMode: true,
   poweredByHeader: false,
   images: { unoptimized: true },

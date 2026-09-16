@@ -43,14 +43,14 @@ function Kpis({ orders, products }: { orders: Order[] | null; products: Product[
       label: 'To fulfil',
       value: toFulfil === null ? null : formatCount(toFulfil),
       note: 'Placed or processing',
-      href: '/merchant/orders/?status=placed',
+      href: '/merchant/orders?status=placed',
     },
     { label: 'Live products', value: live === null ? null : formatCount(live), note: 'Visible to shoppers' },
     {
       label: 'Awaiting approval',
       value: pending === null ? null : formatCount(pending),
       note: 'Reviewed by GUGU staff',
-      href: '/merchant/products/?filter=pending',
+      href: '/merchant/products?filter=pending',
     },
   ];
 
@@ -131,7 +131,7 @@ export function MerchantOverview() {
         title="Overview"
         description="How your store is doing, from your GUGU orders and products."
         actions={
-          <ButtonLink href="/merchant/products/new/" icon={<PackagePlus aria-hidden />}>
+          <ButtonLink href="/merchant/products/new" icon={<PackagePlus aria-hidden />}>
             Add product
           </ButtonLink>
         }
@@ -152,7 +152,7 @@ export function MerchantOverview() {
           title="Recent orders"
           actions={
             orders.status === 'ready' && orders.data.length > 0 ? (
-              <Link href="/merchant/orders/" className="text-sm font-semibold text-brand-700 hover:underline">
+              <Link href="/merchant/orders" className="text-sm font-semibold text-brand-700 hover:underline">
                 View all orders
               </Link>
             ) : null
@@ -194,7 +194,7 @@ export function MerchantOverview() {
               <EmptyState
                 title="No products yet"
                 action={
-                  <ButtonLink href="/merchant/products/new/" variant="secondary" size="sm">
+                  <ButtonLink href="/merchant/products/new" variant="secondary" size="sm">
                     Add your first product
                   </ButtonLink>
                 }
@@ -210,7 +210,7 @@ export function MerchantOverview() {
                 {lowStock.slice(0, 6).map((p) => (
                   <li key={p.id}>
                     <Link
-                      href={`/merchant/products/edit/?id=${encodeURIComponent(p.id)}`}
+                      href={`/merchant/products/edit?id=${encodeURIComponent(p.id)}`}
                       className="flex items-center gap-3 px-4 py-3 hover:bg-brand-50/60 sm:px-5"
                     >
                       <Thumb src={p.imageUrls[0]} />

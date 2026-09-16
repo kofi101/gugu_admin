@@ -74,6 +74,31 @@ function defaults(p?: Product): Values {
   };
 }
 
+function toHighlights(text: string): string[] {
+  return text
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .slice(0, 12);
+}
+
+const same = (a: unknown, b: unknown) => JSON.stringify(a ?? '') === JSON.stringify(b ?? '');
+
+/** The contract's content fields: changing any of them requires re-approval. */
+function contentChanged(
+  p: Product,
+  next: { name: string; description: string; categoryId: string; subCategoryId: string; imageUrls: string[]; highlights: string[] }
+) {
+  return (
+    !same(p.name, next.name) ||
+    !same(p.description ?? '', next.description) ||
+    !same(p.categoryId, next.categoryId) ||
+    !same(p.subCategoryId, next.subCategoryId) ||
+    !same(p.imageUrls, next.imageUrls) ||
+    !same(p.highlights ?? [], next.highlights)
+  );
+}
+
 export function ProductForm({ product }: { product?: Product }) {
   const merchantId = useMerchantId();
   const router = useRouter();
@@ -96,7 +121,20 @@ export function ProductForm({ product }: { product?: Product }) {
     formState: { errors, isDirty },
   } = useForm<Values>({ resolver: zodResolver(schema), defaultValues: defaults(product) });
 
-  const [categoryId, price, discount] = useWatch({ control, name: ['categoryId', 'price', 'discountPrice'] });
+  const [categoryId, price, discount, wName, wDescription, wSub, wHighlights] = useWatch({
+    control,
+    name: ['categoryId', 'price', 'discountPrice', 'name', 'description', 'subCategoryId', 'highlights'],
+  });
+  const willReview =
+    !product ||
+    contentChanged(product, {
+      name: wName.trim(),
+      description: wDescription.trim(),
+      categoryId,
+      subCategoryId: wSub,
+      imageUrls: images.map((i) => (i.kind === 'existing' ? i.url : i.key)),
+      highlights: toHighlights(wHighlights),
+    });
   const subOptions = useMemo(
     () => (subcategories.status === 'ready' ? subcategories.data.filter((s) => s.categoryId === categoryId) : []),
     [subcategories, categoryId]
@@ -121,32 +159,39 @@ export function ProductForm({ product }: { product?: Product }) {
         description: values.description,
         categoryId: values.categoryId,
         subCategoryId: values.subCategoryId,
+        imageUrls,
+        highlights: toHighlights(values.highlights),
+      };
+      // Price, stock and policy can change on a live product without review.
+      const commercial = {
         price: Number(values.price),
         discountPrice: values.discountPrice ? Number(values.discountPrice) : null,
         currency: 'GHS',
-        imageUrls,
         stockQuantity: Number(values.stockQuantity),
-        highlights: values.highlights
-          .split('\n')
-          .map((l) => l.trim())
-          .filter(Boolean)
-          .slice(0, 12),
         returnPolicy: values.returnPolicy,
         advanceSearchableValues: searchTokens(values.name),
-        // Every merchant save goes back to review and off the shelf until approved.
-        approvalStatus: 'pending' as const,
-        isActive: false,
         updatedAt: serverTimestamp(),
       };
+      // Content edits (and new products) must go back to review, off the shelf, in the same write.
+      const review = { approvalStatus: 'pending' as const, isActive: false };
       const ref = doc(firebase().db, 'products', productId);
-      if (editing) {
+      const needsReview = !product || contentChanged(product, content);
+      if (!product) {
+        await setDoc(ref, { ...content, ...commercial, ...review, id: productId, merchantId, createdAt: serverTimestamp() });
+      } else if (needsReview) {
         // Removed photos are left in Storage: existing order lines may reference them.
-        await updateDoc(ref, content);
+        await updateDoc(ref, { ...content, ...commercial, ...review });
       } else {
-        await setDoc(ref, { ...content, id: productId, merchantId, createdAt: serverTimestamp() });
+        await updateDoc(ref, commercial);
       }
-      toast.success(editing ? 'Changes saved and sent for approval.' : 'Product added and sent for approval.');
-      router.push('/merchant/products/?filter=pending');
+      toast.success(
+        !product
+          ? 'Product added and sent for approval.'
+          : needsReview
+            ? 'Changes saved and sent for approval.'
+            : 'Price and stock updated.'
+      );
+      router.push(needsReview ? '/merchant/products?filter=pending' : '/merchant/products');
     } catch (error) {
       const message = describeError(error);
       setSaveError(message);
@@ -164,9 +209,19 @@ export function ProductForm({ product }: { product?: Product }) {
       {product ? (
         <div className="flex items-start gap-3 rounded-[var(--radius-panel)] border border-thread-300 bg-thread-50 px-4 py-3 text-[0.9375rem] text-thread-800">
           <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
-          <p>
-            Currently <StatusBadge status={product.approvalStatus ?? 'pending'} />. Saving changes sends the product back to
-            GUGU staff for approval, and it is hidden from shoppers until approved.
+          <p aria-live="polite">
+            Currently <StatusBadge status={product.approvalStatus ?? 'pending'} />.{' '}
+            {willReview && (isDirty || imagesChanged) ? (
+              <strong className="font-semibold">
+                You changed the name, photos, description, category or highlights. Saving sends the product back to GUGU
+                staff for approval and hides it from shoppers until then.
+              </strong>
+            ) : (
+              <>
+                Price, sale price, stock and return policy changes apply straight away. Changing the name, photos,
+                description, category or highlights sends the product back for approval.
+              </>
+            )}
             {product.approvalStatus === 'rejected' && product.reviewNote ? (
               <span className="mt-1 block">Reviewer note: {product.reviewNote}</span>
             ) : null}
@@ -279,11 +334,11 @@ export function ProductForm({ product }: { product?: Product }) {
       ) : null}
 
       <div className="sticky bottom-0 z-10 -mx-4 flex flex-wrap items-center justify-end gap-2 border-t border-line bg-ground/95 px-4 py-3 backdrop-blur-sm sm:mx-0 sm:rounded-[var(--radius-panel)] sm:border sm:bg-surface/95">
-        <ButtonLink href="/merchant/products/" variant="secondary">
+        <ButtonLink href="/merchant/products" variant="secondary">
           Cancel
         </ButtonLink>
         <Button type="submit" loading={saving} disabled={editing && !isDirty && !imagesChanged}>
-          {saving ? 'Saving…' : editing ? 'Save and send for approval' : 'Add product'}
+          {saving ? 'Saving…' : !editing ? 'Add product' : willReview ? 'Save and send for approval' : 'Save changes'}
         </Button>
       </div>
     </form>

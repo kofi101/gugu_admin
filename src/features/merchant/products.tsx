@@ -77,7 +77,7 @@ export function MerchantProducts() {
         title="Products"
         description="Everything you sell on GUGU. New and edited products are checked by GUGU staff before they go live."
         actions={
-          <ButtonLink href="/merchant/products/new/" icon={<PackagePlus aria-hidden />}>
+          <ButtonLink href="/merchant/products/new" icon={<PackagePlus aria-hidden />}>
             Add product
           </ButtonLink>
         }
@@ -87,7 +87,7 @@ export function MerchantProducts() {
           <FilterTabs
             label="Filter products"
             value={filter}
-            onChange={(v) => router.replace(`/merchant/products/?filter=${v}`, { scroll: false })}
+            onChange={(v) => router.replace(`/merchant/products?filter=${v}`, { scroll: false })}
             options={FILTERS.map(([value, label, test]) => ({
               value,
               label,
@@ -109,7 +109,7 @@ export function MerchantProducts() {
                 <EmptyState
                   title="You have not added any products"
                   action={
-                    <ButtonLink href="/merchant/products/new/" icon={<PackagePlus aria-hidden />}>
+                    <ButtonLink href="/merchant/products/new" icon={<PackagePlus aria-hidden />}>
                       Add your first product
                     </ButtonLink>
                   }
@@ -131,7 +131,7 @@ export function MerchantProducts() {
                       <Thumb src={p.imageUrls[0]} className="size-14" />
                       <div className="min-w-0 flex-1 basis-40">
                         <Link
-                          href={`/merchant/products/edit/?id=${encodeURIComponent(p.id)}`}
+                          href={`/merchant/products/edit?id=${encodeURIComponent(p.id)}`}
                           className="block truncate font-semibold text-ink hover:text-brand-700 hover:underline"
                         >
                           {p.name}
@@ -168,7 +168,7 @@ export function MerchantProducts() {
                             </Button>
                           ) : null}
                           <ButtonLink
-                            href={`/merchant/products/edit/?id=${encodeURIComponent(p.id)}`}
+                            href={`/merchant/products/edit?id=${encodeURIComponent(p.id)}`}
                             variant="ghost"
                             size="sm"
                             icon={<Pencil aria-hidden />}
@@ -212,7 +212,7 @@ export function MerchantProducts() {
 
 function BackToProducts() {
   return (
-    <Link href="/merchant/products/" className="inline-flex min-h-9 items-center gap-1.5 text-sm font-semibold text-brand-700 hover:underline">
+    <Link href="/merchant/products" className="inline-flex min-h-9 items-center gap-1.5 text-sm font-semibold text-brand-700 hover:underline">
       <ArrowLeft className="size-4" aria-hidden />
       Products
     </Link>

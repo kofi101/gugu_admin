@@ -2,13 +2,13 @@
 
 import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
-import { StatusBadge } from '@/components/ui/badge';
+import { Badge, StatusBadge } from '@/components/ui/badge';
 import { formatDateTime, formatMoney } from '@/lib/format';
 import { STATUS_LABEL, linesFor, linesTotal, unitsFor } from '@/lib/orders';
 import type { Order } from '@/lib/types';
 
 export function orderHref(base: '/merchant/orders' | '/admin/orders', order: Order) {
-  return `${base}/view/?u=${encodeURIComponent(order.userId)}&o=${encodeURIComponent(order.id)}`;
+  return `${base}/view?u=${encodeURIComponent(order.userId)}&o=${encodeURIComponent(order.id)}`;
 }
 
 /**
@@ -46,7 +46,9 @@ export function OrderRows({
                 {units} {units === 1 ? 'item' : 'items'}
                 {order.shipping?.city ? `, to ${order.shipping.city}` : ''}
               </span>
-              <span className="order-4 justify-self-end sm:order-none">
+              <span className="order-4 flex flex-wrap justify-end gap-1.5 justify-self-end sm:order-none">
+                {!merchantId && order.refundRequired ? <Badge tone="bad">Refund needed</Badge> : null}
+                {!merchantId && order.paymentReviewRequired ? <Badge tone="pending">Check payment</Badge> : null}
                 <StatusBadge status={order.status} label={STATUS_LABEL[order.status]} />
               </span>
               <span className="flex items-center justify-end gap-2 font-semibold text-ink tabular">

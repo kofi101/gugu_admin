@@ -54,6 +54,11 @@ export type Order = {
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
   statusHistory?: { status: OrderStatus; at?: Timestamp; by?: string }[];
+  /* Server bookkeeping, read-only. */
+  shippingOptionId?: string | null;
+  cancelReason?: string;
+  paymentReviewRequired?: boolean;
+  refundRequired?: boolean;
 };
 
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected';

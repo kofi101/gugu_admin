@@ -40,7 +40,7 @@ export function RoleGate({ role, children }: { role: Exclude<Role, 'customer'>; 
 
   const redirect =
     session.status === 'signed-out'
-      ? `/sign-in/?next=${encodeURIComponent(pathname)}`
+      ? `/sign-in?next=${encodeURIComponent(pathname)}`
       : session.status === 'signed-in' && session.role === 'admin' && role === 'merchant'
         ? homeForRole('admin')
         : null;

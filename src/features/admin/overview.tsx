@@ -32,11 +32,11 @@ export function AdminOverview() {
     {
       label: 'Seller applications to review',
       value: counts.status === 'ready' ? counts.data.applications : null,
-      href: '/admin/applications/',
+      href: '/admin/applications',
     },
-    { label: 'Products awaiting approval', value: counts.status === 'ready' ? counts.data.products : null, href: '/admin/products/' },
-    { label: 'Orders not yet processing', value: counts.status === 'ready' ? counts.data.placed : null, href: '/admin/orders/?status=placed' },
-    { label: 'Orders being processed', value: counts.status === 'ready' ? counts.data.processing : null, href: '/admin/orders/?status=processing' },
+    { label: 'Products awaiting approval', value: counts.status === 'ready' ? counts.data.products : null, href: '/admin/products' },
+    { label: 'Orders not yet processing', value: counts.status === 'ready' ? counts.data.placed : null, href: '/admin/orders?status=placed' },
+    { label: 'Orders being processed', value: counts.status === 'ready' ? counts.data.processing : null, href: '/admin/orders?status=processing' },
   ];
 
   return (
@@ -74,7 +74,7 @@ export function AdminOverview() {
       <Panel
         title="Latest orders"
         actions={
-          <Link href="/admin/orders/" className="text-sm font-semibold text-brand-700 hover:underline">
+          <Link href="/admin/orders" className="text-sm font-semibold text-brand-700 hover:underline">
             View all orders
           </Link>
         }

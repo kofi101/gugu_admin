@@ -1,6 +1,6 @@
 'use client';
 
-import { ArrowLeft, Ban, PackageCheck } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Ban, PackageCheck } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
@@ -62,7 +62,7 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
   const userId = params.get('u') ?? '';
   const orderId = params.get('o') ?? '';
   const valid = Boolean(userId && orderId);
-  const listHref = mode === 'merchant' ? '/merchant/orders/' : '/admin/orders/';
+  const listHref = mode === 'merchant' ? '/merchant/orders' : '/admin/orders';
 
   const result = useLive<Order | null>(valid ? `order:${userId}/${orderId}` : null, (next, fail) =>
     watchOrder(userId, orderId, next, fail)
@@ -142,6 +142,33 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
           <p className="mt-3 text-sm text-ink-muted">
             Wait for the customer&apos;s online payment to clear before preparing this order.
           </p>
+        ) : null}
+        {order.cancelReason ? (
+          <p className="mt-3 text-[0.9375rem]">
+            <span className="font-semibold">Cancellation reason:</span> {order.cancelReason}
+          </p>
+        ) : null}
+        {mode === 'admin' && (order.refundRequired || order.paymentReviewRequired) ? (
+          <ul className="mt-4 flex flex-col gap-2">
+            {order.refundRequired ? (
+              <li className="flex items-start gap-2 rounded-lg border border-bad-700/25 bg-bad-50 px-3 py-2.5 text-[0.9375rem] text-bad-700">
+                <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
+                <span>
+                  <strong className="font-semibold">Refund required.</strong> This order was paid and then cancelled.
+                  Refund the customer through ExpressPay.
+                </span>
+              </li>
+            ) : null}
+            {order.paymentReviewRequired ? (
+              <li className="flex items-start gap-2 rounded-lg border border-thread-300 bg-thread-50 px-3 py-2.5 text-[0.9375rem] text-thread-800">
+                <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
+                <span>
+                  <strong className="font-semibold">Check this payment.</strong> ExpressPay reported a different amount or
+                  currency, or the payment arrived after the order closed.
+                </span>
+              </li>
+            ) : null}
+          </ul>
         ) : null}
       </Panel>
 

@@ -36,7 +36,7 @@ export function MerchantOrders() {
 
   const result = useLive<Order[]>(`m-orders:${merchantId}`, (next, fail) => watchMerchantOrders(merchantId, next, fail));
 
-  const setFilter = (f: Filter) => router.replace(`/merchant/orders/?status=${f}`, { scroll: false });
+  const setFilter = (f: Filter) => router.replace(`/merchant/orders?status=${f}`, { scroll: false });
 
   return (
     <>

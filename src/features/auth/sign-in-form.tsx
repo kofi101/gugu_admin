@@ -101,7 +101,7 @@ export function SignInForm() {
         </Field>
         <div className="-mt-2 flex justify-end">
           <Link
-            href="/forgot-password/"
+            href="/forgot-password"
             className="text-sm font-semibold text-brand-700 underline-offset-4 hover:underline"
           >
             Forgot password?

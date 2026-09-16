@@ -50,7 +50,7 @@ export function ForgotPasswordForm() {
           If <strong className="font-semibold break-all">{sentTo}</strong> has a GUGU account, a reset link is on its way.
           Check spam if it does not arrive in a few minutes.
         </p>
-        <ButtonLink href="/sign-in/" variant="secondary">
+        <ButtonLink href="/sign-in" variant="secondary">
           Back to sign in
         </ButtonLink>
       </div>
@@ -70,7 +70,7 @@ export function ForgotPasswordForm() {
       <Button type="submit" loading={isSubmitting}>
         Send reset link
       </Button>
-      <Link href="/sign-in/" className="text-sm font-semibold text-brand-700 underline-offset-4 hover:underline">
+      <Link href="/sign-in" className="text-sm font-semibold text-brand-700 underline-offset-4 hover:underline">
         Back to sign in
       </Link>
     </form>

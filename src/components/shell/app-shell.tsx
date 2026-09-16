@@ -11,8 +11,8 @@ import { cn } from '@/lib/cn';
 export type NavItem = { href: string; label: string; icon: LucideIcon; exact?: boolean };
 
 function isActive(pathname: string, item: NavItem) {
-  const path = pathname.endsWith('/') ? pathname : `${pathname}/`;
-  return item.exact ? path === item.href : path.startsWith(item.href);
+  const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
+  return item.exact ? path === item.href : path === item.href || path.startsWith(`${item.href}/`);
 }
 
 function NavList({ items, onNavigate }: { items: NavItem[]; onNavigate?: () => void }) {

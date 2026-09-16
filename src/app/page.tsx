@@ -12,7 +12,7 @@ export default function Home() {
     session.status === 'signed-in'
       ? homeForRole(session.role)
       : session.status === 'signed-out' || session.status === 'unconfigured'
-        ? '/sign-in/'
+        ? '/sign-in'
         : null;
 
   useEffect(() => {
