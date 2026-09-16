@@ -16,7 +16,9 @@ import { mutate } from '@/lib/notify';
 import {
   ADMIN_CANCELLABLE,
   NEXT_ACTION_LABEL,
-  NEXT_STATUS,
+  merchantCanCancel,
+  nextStatusFor,
+  statusFor,
   STATUS_LABEL,
   linesFor,
   linesTotal,
@@ -108,8 +110,14 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
   const lines = linesFor(order, merchantId);
   const otherSellerLines = merchantId ? order.lines.length - lines.length : 0;
   const yourTotal = linesTotal(lines);
-  const next = NEXT_STATUS[order.status];
-  const canCancel = mode === 'admin' && ADMIN_CANCELLABLE.includes(order.status);
+  // Merchants see and move only their own fulfilment entry; admins act on the whole order.
+  const shown = statusFor(order, merchantId);
+  const next = nextStatusFor(order, merchantId);
+  const canCancel =
+    mode === 'admin' ? ADMIN_CANCELLABLE.includes(order.status) : merchantId ? merchantCanCancel(order, merchantId) : false;
+  const fulfilmentEntries = mode === 'admin' && order.fulfilment ? Object.entries(order.fulfilment) : [];
+  const ownHistory = merchantId ? order.fulfilment?.[merchantId]?.history : undefined;
+  const history = ownHistory?.length ? ownHistory : (order.statusHistory ?? []);
   const ship = order.shipping ?? {};
   const address = [ship.line1, ship.line2, ship.city, ship.region, ship.postalCode].filter(Boolean).join(', ');
 
@@ -121,7 +129,7 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
         description={`Placed ${formatDateTime(order.createdAt)}`}
         actions={
           <>
-            <StatusBadge status={order.status} label={STATUS_LABEL[order.status]} />
+            <StatusBadge status={shown} label={STATUS_LABEL[shown]} />
             {canCancel ? (
               <Button variant="quiet-danger" icon={<Ban aria-hidden />} onClick={() => setDialog('cancel')}>
                 Cancel order
@@ -129,7 +137,7 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
             ) : null}
             {next ? (
               <Button icon={<PackageCheck aria-hidden />} onClick={() => setDialog('advance')}>
-                {NEXT_ACTION_LABEL[order.status]}
+                {NEXT_ACTION_LABEL[shown]}
               </Button>
             ) : null}
           </>
@@ -137,7 +145,23 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
       />
 
       <Panel className="mb-6" bodyClassName="px-4 py-5 sm:px-5">
-        <StatusStrip status={order.status} />
+        <StatusStrip status={shown} />
+        {merchantId && order.merchantIds.length > 1 && shown !== order.status ? (
+          <p className="mt-3 text-sm text-ink-muted">
+            Your part is {STATUS_LABEL[shown].toLowerCase()}. The whole order shows as{' '}
+            {STATUS_LABEL[order.status].toLowerCase()} until every seller catches up.
+          </p>
+        ) : null}
+        {fulfilmentEntries.length > 1 ? (
+          <ul className="mt-4 grid gap-1.5 text-[0.9375rem] sm:grid-cols-2" aria-label="Fulfilment by seller">
+            {fulfilmentEntries.map(([m, e]) => (
+              <li key={m} className="flex items-center justify-between gap-3 rounded-md bg-ground px-3 py-1.5">
+                <code className="truncate text-sm">{m}</code>
+                <StatusBadge status={e.status} label={STATUS_LABEL[e.status] ?? e.status} />
+              </li>
+            ))}
+          </ul>
+        ) : null}
         {order.status === 'awaiting_payment' ? (
           <p className="mt-3 text-sm text-ink-muted">
             Wait for the customer&apos;s online payment to clear before preparing this order.
@@ -253,10 +277,10 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
               ]}
             />
           </Panel>
-          {order.statusHistory && order.statusHistory.length > 0 ? (
+          {history.length > 0 ? (
             <Panel title="History" bodyClassName="px-4 py-4 sm:px-5">
               <ol className="flex flex-col gap-3">
-                {[...order.statusHistory].reverse().map((h, i) => (
+                {[...history].reverse().map((h, i) => (
                   <li key={i} className="flex items-baseline justify-between gap-4 text-[0.9375rem]">
                     <span className="font-medium">{STATUS_LABEL[h.status] ?? humanize(h.status)}</span>
                     <span className="text-sm text-ink-muted">{formatDateTime(h.at)}</span>
@@ -273,15 +297,15 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
           open={dialog === 'advance'}
           onClose={() => setDialog(null)}
           tone="primary"
-          title={`${NEXT_ACTION_LABEL[order.status]}?`}
+          title={`${NEXT_ACTION_LABEL[shown]}?`}
           description={
             <>
-              Order {order.orderNumber} moves from {STATUS_LABEL[order.status].toLowerCase()} to{' '}
-              <strong className="font-semibold text-ink">{STATUS_LABEL[next].toLowerCase()}</strong>. Orders only move forward,
-              so this cannot be undone.
+              {merchantId ? 'Your part of order' : 'Order'} {order.orderNumber} goes from {STATUS_LABEL[shown].toLowerCase()}{' '}
+              to <strong className="font-semibold text-ink">{STATUS_LABEL[next].toLowerCase()}</strong>. Orders only move
+              forward, so this cannot be undone.
             </>
           }
-          confirmLabel={NEXT_ACTION_LABEL[order.status] ?? 'Update'}
+          confirmLabel={NEXT_ACTION_LABEL[shown] ?? 'Update'}
           onConfirm={() =>
             mutate(() => updateOrderStatus({ userId: order.userId, orderId: order.id, status: next }), {
               success: `Order ${order.orderNumber} marked ${STATUS_LABEL[next].toLowerCase()}.`,
@@ -295,10 +319,10 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
           open={dialog === 'cancel'}
           onClose={() => setDialog(null)}
           title={`Cancel order ${order.orderNumber}?`}
-          description="Stock is returned to sellers and the customer sees the order as cancelled. This cannot be undone."
+          description="The items go back into stock and the order is closed. This cannot be undone."
           confirmLabel="Cancel order"
           withNote
-          noteLabel="Reason (shown to the customer)"
+          noteLabel="Reason"
           onConfirm={(reason) =>
             mutate(() => cancelOrder({ orderId: order.id, userId: order.userId, reason: reason || undefined }), {
               success: `Order ${order.orderNumber} cancelled.`,

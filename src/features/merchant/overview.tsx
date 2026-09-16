@@ -11,7 +11,7 @@ import { useMerchantId } from '@/lib/auth';
 import { cn } from '@/lib/cn';
 import { watchMerchantOrders, watchMerchantProducts } from '@/lib/data';
 import { formatCount, formatMoney } from '@/lib/format';
-import { ORDER_STATUSES, STATUS_LABEL, isRevenue, linesFor, linesTotal } from '@/lib/orders';
+import { ORDER_STATUSES, STATUS_LABEL, isRevenue, linesFor, linesTotal, statusFor } from '@/lib/orders';
 import type { Order, OrderStatus, Product } from '@/lib/types';
 import { useLive } from '@/lib/use-data';
 import { OrderRows } from '../orders/order-rows';
@@ -31,9 +31,11 @@ const statusColor: Record<OrderStatus, string> = {
 function Kpis({ orders, products }: { orders: Order[] | null; products: Product[] | null }) {
   const merchantId = useMerchantId();
   const revenue = orders
-    ? orders.filter(isRevenue).reduce((sum, o) => sum + linesTotal(linesFor(o, merchantId)), 0)
+    ? orders.filter((o) => isRevenue(o, merchantId)).reduce((sum, o) => sum + linesTotal(linesFor(o, merchantId)), 0)
     : null;
-  const toFulfil = orders ? orders.filter((o) => o.status === 'placed' || o.status === 'processing').length : null;
+  const toFulfil = orders
+    ? orders.filter((o) => ['placed', 'processing'].includes(statusFor(o, merchantId))).length
+    : null;
   const pending = products ? products.filter((p) => p.approvalStatus === 'pending').length : null;
   const live = products ? products.filter((p) => p.isActive && p.approvalStatus === 'approved').length : null;
 
@@ -84,8 +86,11 @@ function Kpis({ orders, products }: { orders: Order[] | null; products: Product[
   );
 }
 
-function StatusBreakdown({ orders }: { orders: Order[] }) {
-  const counts = ORDER_STATUSES.map((s) => ({ status: s, count: orders.filter((o) => o.status === s).length })).filter(
+function StatusBreakdown({ orders, merchantId }: { orders: Order[]; merchantId: string }) {
+  const counts = ORDER_STATUSES.map((s) => ({
+    status: s,
+    count: orders.filter((o) => statusFor(o, merchantId) === s).length,
+  })).filter(
     (c) => c.count > 0
   );
   const total = orders.length;
@@ -181,7 +186,7 @@ export function MerchantOverview() {
             {orders.status === 'ready' && orders.data.length === 0 ? (
               <p className="px-5 py-6 text-[0.9375rem] text-ink-muted">No orders to break down yet.</p>
             ) : null}
-            {orders.status === 'ready' && orders.data.length > 0 ? <StatusBreakdown orders={orders.data} /> : null}
+            {orders.status === 'ready' && orders.data.length > 0 ? <StatusBreakdown orders={orders.data} merchantId={merchantId} /> : null}
             {orders.status === 'error' ? <p className="px-5 py-6 text-ink-muted">Unavailable.</p> : null}
           </Panel>
 

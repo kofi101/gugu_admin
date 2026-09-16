@@ -7,6 +7,7 @@ import { PageHeader, Panel } from '@/components/ui/panel';
 import { DataView, EmptyState } from '@/components/ui/states';
 import { useMerchantId } from '@/lib/auth';
 import { watchMerchantOrders } from '@/lib/data';
+import { statusFor } from '@/lib/orders';
 import type { Order, OrderStatus } from '@/lib/types';
 import { useLive } from '@/lib/use-data';
 import { OrderDetail } from '../orders/order-detail';
@@ -60,7 +61,10 @@ export function MerchantOrders() {
             ).map(([value, label]) => ({
               value,
               label,
-              count: result.status === 'ready' ? result.data.filter((o) => matches[value](o.status)).length : undefined,
+              count:
+                result.status === 'ready'
+                  ? result.data.filter((o) => matches[value](statusFor(o, merchantId))).length
+                  : undefined,
             }))}
           />
           <SearchInput
@@ -83,7 +87,7 @@ export function MerchantOrders() {
             const q = term.trim().toLowerCase();
             const visible = orders.filter(
               (o) =>
-                matches[filter](o.status) &&
+                matches[filter](statusFor(o, merchantId)) &&
                 (!q || o.orderNumber.toLowerCase().includes(q) || (o.shipping?.fullName ?? '').toLowerCase().includes(q))
             );
             if (visible.length === 0) {

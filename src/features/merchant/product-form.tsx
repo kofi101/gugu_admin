@@ -19,7 +19,6 @@ import { watchCategories, watchSubcategories } from '@/lib/data';
 import { describeError } from '@/lib/errors';
 import { firebase } from '@/lib/firebase';
 import { formatMoney } from '@/lib/format';
-import { searchTokens } from '@/lib/search-tokens';
 import type { Category, Product, SubCategory } from '@/lib/types';
 import { uploadPicked } from '@/lib/upload-picked';
 import { useLive } from '@/lib/use-data';
@@ -46,7 +45,8 @@ const schema = z
       .string()
       .trim()
       .min(1, 'Enter how many you have in stock.')
-      .regex(/^\d{1,6}$/, 'Enter a whole number, 0 or more.'),
+      .regex(/^\d{1,6}$/, 'Enter a whole number, 0 or more.')
+      .refine((v) => Number(v) <= 100000, 'Stock can be at most 100,000.'),
     highlights: z.string().max(2000, 'Keep highlights under 2,000 characters.'),
     returnPolicy: z.string().trim().max(500, 'Keep this under 500 characters.'),
   })
@@ -169,7 +169,6 @@ export function ProductForm({ product }: { product?: Product }) {
         currency: 'GHS',
         stockQuantity: Number(values.stockQuantity),
         returnPolicy: values.returnPolicy,
-        advanceSearchableValues: searchTokens(values.name),
         updatedAt: serverTimestamp(),
       };
       // Content edits (and new products) must go back to review, off the shelf, in the same write.

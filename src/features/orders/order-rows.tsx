@@ -4,7 +4,7 @@ import { ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { Badge, StatusBadge } from '@/components/ui/badge';
 import { formatDateTime, formatMoney } from '@/lib/format';
-import { STATUS_LABEL, linesFor, linesTotal, unitsFor } from '@/lib/orders';
+import { STATUS_LABEL, linesFor, linesTotal, statusFor, unitsFor } from '@/lib/orders';
 import type { Order } from '@/lib/types';
 
 export function orderHref(base: '/merchant/orders' | '/admin/orders', order: Order) {
@@ -49,7 +49,7 @@ export function OrderRows({
               <span className="order-4 flex flex-wrap justify-end gap-1.5 justify-self-end sm:order-none">
                 {!merchantId && order.refundRequired ? <Badge tone="bad">Refund needed</Badge> : null}
                 {!merchantId && order.paymentReviewRequired ? <Badge tone="pending">Check payment</Badge> : null}
-                <StatusBadge status={order.status} label={STATUS_LABEL[order.status]} />
+                <StatusBadge status={statusFor(order, merchantId)} label={STATUS_LABEL[statusFor(order, merchantId)]} />
               </span>
               <span className="flex items-center justify-end gap-2 font-semibold text-ink tabular">
                 {formatMoney(total)}

@@ -54,6 +54,8 @@ export type Order = {
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
   statusHistory?: { status: OrderStatus; at?: Timestamp; by?: string }[];
+  /** Per-merchant fulfilment; the order status is the least-advanced entry. */
+  fulfilment?: Record<string, { status: OrderStatus; history?: { status: OrderStatus; at?: Timestamp; by?: string }[] }>;
   /* Server bookkeeping, read-only. */
   shippingOptionId?: string | null;
   cancelReason?: string;

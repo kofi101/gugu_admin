@@ -15,7 +15,6 @@ import { useMerchantId } from '@/lib/auth';
 import { watchMerchant } from '@/lib/data';
 import { describeError } from '@/lib/errors';
 import { firebase } from '@/lib/firebase';
-import { searchTokens } from '@/lib/search-tokens';
 import type { Merchant } from '@/lib/types';
 import { uploadPicked } from '@/lib/upload-picked';
 import { useLive } from '@/lib/use-data';
@@ -65,7 +64,6 @@ function StoreForm({ merchant }: { merchant: Merchant }) {
         description: values.description,
         logoUrl: logoUrl ?? '',
         coverImageUrl: coverImageUrl ?? '',
-        advanceSearchableValues: searchTokens(values.name),
         updatedAt: serverTimestamp(),
       });
       reset(values);
