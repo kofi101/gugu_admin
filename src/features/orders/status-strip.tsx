@@ -7,7 +7,7 @@ import type { OrderStatus } from '@/lib/types';
  * Fulfilment progress as a woven strip: each finished step is a filled band,
  * the current one carries the gold weft.
  */
-export function StatusStrip({ status }: { status: OrderStatus }) {
+export function StatusStrip({ status, ownPart }: { status: OrderStatus; ownPart?: boolean }) {
   const index = FULFILMENT_STEPS.indexOf(status);
   const offPath = index === -1;
   return (
@@ -47,8 +47,8 @@ export function StatusStrip({ status }: { status: OrderStatus }) {
       </ol>
       {offPath ? (
         <p className="mt-3 text-sm text-ink-muted">
-          This order is <strong className="font-semibold text-ink">{STATUS_LABEL[status].toLowerCase()}</strong> and is not
-          in fulfilment.
+          {ownPart ? 'Your part of this order is' : 'This order is'}{' '}
+          <strong className="font-semibold text-ink">{STATUS_LABEL[status].toLowerCase()}</strong> and is not in fulfilment.
         </p>
       ) : null}
     </div>

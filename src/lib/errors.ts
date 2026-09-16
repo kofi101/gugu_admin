@@ -25,9 +25,21 @@ const FUNCTION_CODES: Record<string, string> = {
   MERCHANT_ID_COLLISION: 'A store ID clash happened. Try approving again.',
 };
 
+/**
+ * The contract code a callable threw (e.g. `REAUTH_REQUIRED`). The web SDK
+ * appends the HTTP status to the message, as in `REAUTH_REQUIRED [401]`.
+ */
+export function functionErrorCode(error: unknown): string | null {
+  const message = (error as { message?: unknown } | null)?.message;
+  if (typeof message !== 'string') return null;
+  const match = /^([A-Z][A-Z0-9_]*)(?: \[\d{3}\])?$/.exec(message.trim());
+  return match ? match[1] : null;
+}
+
 /** Turns SDK errors into sentences that say what happened and what to do. */
 export function describeError(error: unknown): string {
-  if (error instanceof FirebaseError && FUNCTION_CODES[error.message]) return FUNCTION_CODES[error.message];
+  const fnCode = functionErrorCode(error);
+  if (fnCode && FUNCTION_CODES[fnCode]) return FUNCTION_CODES[fnCode];
   if (error instanceof FirebaseError) {
     const code = error.code.replace(/^(auth|firestore|storage|functions)\//, '');
     switch (code) {
@@ -58,12 +70,12 @@ export function describeError(error: unknown): string {
       case 'object-not-found':
         return 'This record no longer exists.';
       case 'failed-precondition':
-        return error.message && !error.message.startsWith('Firebase')
-          ? error.message
-          : 'This change is not allowed in the current state. Refresh and try again.';
+        return fnCode || !error.message || error.message.startsWith('Firebase')
+          ? 'This change is not allowed in the current state. Refresh and try again.'
+          : error.message;
       case 'invalid-argument':
-        return /^[A-Z_]+$/.test(error.message)
-          ? `Some of the details are invalid (${error.message}).`
+        return fnCode
+          ? `Some of the details are invalid (${fnCode}).`
           : error.message || 'Some of the details are invalid.';
       case 'internal':
         return 'GUGU could not finish this. Try again in a moment.';
@@ -72,7 +84,7 @@ export function describeError(error: unknown): string {
       case 'canceled':
         return 'Upload cancelled.';
       default:
-        return error.message || 'Something went wrong. Try again.';
+        return fnCode ? `GUGU could not do this (${fnCode}). Try again or contact support.` : error.message || 'Something went wrong. Try again.';
     }
   }
   if (error instanceof Error) return error.message;

@@ -16,6 +16,7 @@ import {
   type QueryConstraint,
 } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
+import { functionErrorCode } from './errors';
 import { firebase } from './firebase';
 import type {
   Banner,
@@ -235,7 +236,7 @@ function callable<I, O>(name: string) {
       return res.data;
     } catch (error) {
       // Claims changed after this token was issued: the session must be renewed.
-      if ((error as { message?: string } | null)?.message === 'REAUTH_REQUIRED' && typeof window !== 'undefined') {
+      if (functionErrorCode(error) === 'REAUTH_REQUIRED' && typeof window !== 'undefined') {
         window.dispatchEvent(new Event(REAUTH_EVENT));
       }
       throw error;

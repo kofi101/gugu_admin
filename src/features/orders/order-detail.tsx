@@ -173,7 +173,7 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
       />
 
       <Panel className="mb-6" bodyClassName="px-4 py-5 sm:px-5">
-        <StatusStrip status={shown} />
+        <StatusStrip status={shown} ownPart={Boolean(merchantId) && order.merchantIds.length > 1} />
         {merchantId && order.fulfilment?.[merchantId]?.deliveredAt ? (
           <p className="mt-3 text-sm text-ink-muted">
             You marked your part delivered {formatDateTime(order.fulfilment[merchantId].deliveredAt)}.
@@ -181,7 +181,7 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
         ) : null}
         {merchantId && shown === 'cancelled' && order.status === 'delivered' ? (
           <p className="mt-3 text-[0.9375rem]">
-            Your part of this order was cancelled and its stock returned. Other sellers&apos; delivered items were kept.
+            Its stock was returned. Other sellers&apos; delivered items were kept.
           </p>
         ) : null}
         {merchantId && order.merchantIds.length > 1 && shown !== order.status && shown !== 'cancelled' ? (
