@@ -138,6 +138,8 @@ export function AppShell({ area, items, children }: { area: string; items: NavIt
           e.preventDefault();
           setOpen(false);
         }}
+        // Browsers may close a modal on Escape even when cancel is prevented; keep state in sync.
+        onClose={() => setOpen(false)}
         onClick={(e) => e.target === e.currentTarget && setOpen(false)}
         className="m-0 h-dvh max-h-dvh w-[min(20rem,85vw)] max-w-none bg-brand-900 p-0 text-white lg:hidden"
       >

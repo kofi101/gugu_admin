@@ -123,7 +123,7 @@ function NameDialog({ editing, onClose }: { editing: Editing; onClose: () => voi
     >
       <form id="catalog-form" onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-4">
         <Field label="Name" required error={errors.name?.message}>
-          {(p) => <Input {...p} autoFocus {...register('name')} />}
+          {(p) => <Input {...p} data-autofocus {...register('name')} />}
         </Field>
         {isCategory ? (
           <Field label="Position" hint="Lower numbers show first in the app. Leave empty to sort by name." error={errors.sortOrder?.message}>

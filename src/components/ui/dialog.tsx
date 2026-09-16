@@ -34,7 +34,11 @@ export function Dialog({
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    if (open && !el.open) el.showModal();
+    if (open && !el.open) {
+      el.showModal();
+      // showModal focuses the first control (the close button); prefer an explicit target.
+      el.querySelector<HTMLElement>('[data-autofocus]')?.focus();
+    }
     if (!open && el.open) el.close();
   }, [open]);
 
@@ -45,8 +49,14 @@ export function Dialog({
       e.preventDefault();
       onCloseRef.current();
     };
+    // Browsers may still close on Escape without user activation: sync state on close too.
+    const closed = () => onCloseRef.current();
     el.addEventListener('cancel', handle);
-    return () => el.removeEventListener('cancel', handle);
+    el.addEventListener('close', closed);
+    return () => {
+      el.removeEventListener('cancel', handle);
+      el.removeEventListener('close', closed);
+    };
   }, []);
 
   return (
@@ -149,7 +159,8 @@ export function ConfirmDialog({
       description={description}
       footer={
         <>
-          <Button variant="secondary" onClick={close} disabled={busy}>
+          {/* Safe default focus for consequential actions. */}
+          <Button variant="secondary" onClick={close} disabled={busy} data-autofocus={withNote ? undefined : true}>
             Cancel
           </Button>
           <Button variant={tone === 'danger' ? 'danger' : 'primary'} onClick={confirm} loading={busy}>
@@ -164,7 +175,7 @@ export function ConfirmDialog({
           required={noteRequired}
           error={touched && noteMissing ? 'Add a short reason so the seller knows what to fix.' : undefined}
         >
-          {(p) => <Textarea {...p} value={note} maxLength={500} onChange={(e) => setNote(e.target.value)} />}
+          {(p) => <Textarea {...p} data-autofocus value={note} maxLength={500} onChange={(e) => setNote(e.target.value)} />}
         </Field>
       ) : null}
     </Dialog>
