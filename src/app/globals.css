@@ -1,0 +1,113 @@
+@import 'tailwindcss';
+
+/*
+ * GUGU seller dashboard tokens.
+ * Brand scale is derived from #0F96C1 (500) and #086E8E (700) and runs
+ * strictly light -> dark. Text-on-colour pairs used in the UI:
+ *   white on brand-700  5.8:1   white on brand-900 10.2:1
+ *   brand-700 on brand-50 5.4:1 ink-muted on ground 6.0:1
+ * brand-500 is 3.4:1 on white: focus rings, strokes and large marks only.
+ */
+@theme {
+  --font-sans: var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
+
+  --color-brand-50: #eef8fb;
+  --color-brand-100: #d5eef6;
+  --color-brand-200: #abdcec;
+  --color-brand-300: #74c4df;
+  --color-brand-400: #3aaad0;
+  --color-brand-500: #0f96c1;
+  --color-brand-600: #0a7fa3;
+  --color-brand-700: #086e8e;
+  --color-brand-800: #075a74;
+  --color-brand-900: #06475c;
+  --color-brand-950: #042f3d;
+
+  /* Kente-gold thread: accent strokes and the pending state. */
+  --color-thread-300: #f2c35b;
+  --color-thread-500: #d99a1e;
+  --color-thread-50: #fdf3dc;
+  --color-thread-800: #7d5200;
+
+  --color-ink: #0f2830;
+  --color-ink-muted: #4a626a;
+  --color-ink-subtle: #5e747b;
+  --color-line: #d9e3e6;
+  --color-line-strong: #b9c9ce;
+  --color-ground: #f3f6f7;
+  --color-surface: #ffffff;
+
+  --color-ok-50: #e3f4ea;
+  --color-ok-700: #1a7547;
+  --color-bad-50: #fdecea;
+  --color-bad-700: #b42318;
+
+  --radius-control: 0.5rem;
+  --radius-panel: 0.75rem;
+
+  --shadow-panel: 0 1px 2px rgb(15 40 48 / 0.06), 0 4px 12px -6px rgb(15 40 48 / 0.08);
+  --shadow-pop: 0 12px 32px -8px rgb(15 40 48 / 0.28), 0 2px 6px rgb(15 40 48 / 0.08);
+
+  --animate-shimmer: shimmer 1.4s ease-in-out infinite;
+  @keyframes shimmer {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.55;
+    }
+  }
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background: var(--color-ground);
+    color: var(--color-ink);
+    font-feature-settings: 'ss01';
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: var(--color-brand-100);
+  }
+  dialog::backdrop {
+    background: rgb(4 47 61 / 0.45);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * The woven strip: GUGU's one signature mark. Narrow bands in the brand
+ * blues with a gold weft, like a strip of kente before it is sewn.
+ */
+@utility woven {
+  background-image:
+    repeating-linear-gradient(
+      90deg,
+      var(--color-brand-900) 0 14px,
+      var(--color-brand-500) 14px 22px,
+      var(--color-thread-500) 22px 26px,
+      var(--color-brand-300) 26px 34px,
+      var(--color-brand-700) 34px 48px,
+      var(--color-surface) 48px 50px
+    );
+}
