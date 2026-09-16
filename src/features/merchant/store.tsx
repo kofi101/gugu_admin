@@ -20,9 +20,9 @@ import { uploadPicked } from '@/lib/upload-picked';
 import { useLive } from '@/lib/use-data';
 
 const schema = z.object({
-  name: z.string().trim().min(2, 'Store name must be at least 2 characters.').max(80, 'Keep the name under 80 characters.'),
-  tagline: z.string().trim().max(120, 'Keep the tagline under 120 characters.'),
-  description: z.string().trim().max(2000, 'Keep the description under 2,000 characters.'),
+  name: z.string().trim().min(2, 'Store name must be at least 2 characters.').max(200, 'Keep the name to 200 characters or fewer.'),
+  tagline: z.string().trim().max(300, 'Keep the tagline to 300 characters or fewer.'),
+  description: z.string().trim().max(5000, 'Keep the description to 5,000 characters or fewer.'),
 });
 type Values = z.infer<typeof schema>;
 

@@ -41,10 +41,9 @@ export const ADMIN_CANCELLABLE: OrderStatus[] = ['awaiting_payment', 'placed', '
 const FULFILLING: OrderStatus[] = ['placed', 'processing', 'shipped'];
 
 /**
- * The status a merchant sees: its own fulfilment entry while the order is in
- * fulfilment (or delivered), otherwise the order status (awaiting payment,
- * cancelled, payment failed). Orders from before per-merchant fulfilment fall
- * back to the order status.
+ * The status a merchant sees: its own `fulfilment[merchantId]` entry while the
+ * order is in fulfilment or delivered, otherwise the order status (awaiting
+ * payment, cancelled, payment failed).
  */
 export function statusFor(order: Order, merchantId: string | null): OrderStatus {
   if (!merchantId) return order.status;

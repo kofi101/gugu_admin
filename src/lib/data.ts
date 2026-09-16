@@ -233,7 +233,10 @@ function callable<I, O>(name: string) {
   };
 }
 
-export const updateOrderStatus = callable<{ userId: string; orderId: string; status: OrderStatus }, { status: OrderStatus }>(
+export const updateOrderStatus = callable<
+  { userId: string; orderId: string; status: OrderStatus; merchantId?: string },
+  { status: OrderStatus; fulfilmentStatus?: OrderStatus }
+>(
   'updateOrderStatus'
 );
 export const cancelOrder = callable<{ orderId: string; reason?: string; userId?: string }, { status: OrderStatus }>(

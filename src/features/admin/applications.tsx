@@ -159,7 +159,7 @@ export function Applications() {
         title={action?.decision === 'approve' ? `Approve ${action.app.businessName}?` : `Reject ${action?.app.businessName ?? ''}?`}
         description={
           action?.decision === 'approve'
-            ? 'This creates their GUGU store and gives the account seller access. They need to sign out and back in, or use "check again", to see it.'
+            ? 'This creates their GUGU store and gives the account seller access. For security the applicant is signed out everywhere and must sign in again to see the seller dashboard.'
             : 'The applicant keeps a shopper account. Tell them what to fix if they can reapply.'
         }
         confirmLabel={action?.decision === 'approve' ? 'Approve and create store' : 'Reject application'}
@@ -170,7 +170,7 @@ export function Applications() {
           if (!action) return;
           const { app, decision } = action;
           await mutate(() => reviewMerchantApplication({ uid: app.uid, decision, note: note || undefined }), {
-            success: decision === 'approve' ? `${app.businessName} approved. Their store is ready.` : `${app.businessName} rejected.`,
+            success: decision === 'approve' ? `${app.businessName} approved. They have been signed out and must sign in again.` : `${app.businessName} rejected.`,
             error: 'Decision not saved.',
           });
         }}

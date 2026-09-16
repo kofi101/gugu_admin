@@ -6,7 +6,7 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { Wordmark } from '@/components/brand';
 import { Button, ButtonLink, buttonClass } from '@/components/ui/button';
-import { useAuth } from '@/lib/auth';
+import { isSessionEnded, useAuth } from '@/lib/auth';
 import { describeError } from '@/lib/errors';
 import { homeForRole } from './home-for-role';
 
@@ -34,6 +34,11 @@ export function NoAccess({ reason = 'customer' }: { reason?: 'customer' | 'staff
         toast('No seller access on this account yet.');
       }
     } catch (error) {
+      if (isSessionEnded(error)) {
+        // Approval revokes the old session: a fresh sign-in picks up seller access.
+        await signOut('session-ended');
+        return;
+      }
       toast.error(describeError(error));
     } finally {
       setChecking(false);

@@ -25,12 +25,25 @@ type AuthContextValue = {
   signInWithEmail: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   sendReset: (email: string) => Promise<void>;
-  signOut: () => Promise<void>;
+  /** Signs out and returns to sign-in; `reason` shows a notice there. */
+  signOut: (reason?: 'session-ended') => Promise<void>;
   /** Forces a fresh ID token so newly granted claims take effect. */
   refreshClaims: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+/** Role changes revoke refresh tokens server-side; these codes mean "sign in again". */
+export function isSessionEnded(error: unknown): boolean {
+  const code = (error as { code?: unknown } | null)?.code;
+  return (
+    code === 'auth/user-token-expired' ||
+    code === 'auth/invalid-user-token' ||
+    code === 'auth/user-disabled' ||
+    code === 'auth/user-not-found' ||
+    code === 'functions/unauthenticated'
+  );
+}
 
 async function readSession(user: User, forceRefresh = false): Promise<Session> {
   const token = await user.getIdTokenResult(forceRefresh);
@@ -83,7 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await sendPasswordResetEmail(firebase().auth, email.trim());
   }, []);
 
-  const signOut = useCallback(async () => {
+  const signOut = useCallback(async (reason?: 'session-ended') => {
     const { auth, db } = firebase();
     await firebaseSignOut(auth);
     // Drop any cached documents from the previous account, then reload so no
@@ -94,7 +107,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       // Memory cache only; nothing persisted.
     }
-    window.location.replace('/sign-in');
+    window.location.replace(reason ? `/sign-in?reason=${reason}` : '/sign-in');
   }, []);
 
   const refreshClaims = useCallback(async () => {

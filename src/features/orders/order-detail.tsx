@@ -16,6 +16,7 @@ import { mutate } from '@/lib/notify';
 import {
   ADMIN_CANCELLABLE,
   NEXT_ACTION_LABEL,
+  NEXT_STATUS,
   merchantCanCancel,
   nextStatusFor,
   statusFor,
@@ -23,7 +24,9 @@ import {
   linesFor,
   linesTotal,
 } from '@/lib/orders';
-import type { Order } from '@/lib/types';
+import type { Order, OrderStatus } from '@/lib/types';
+
+const FULFILLING_ORDER: OrderStatus[] = ['placed', 'processing', 'shipped'];
 import { useLive } from '@/lib/use-data';
 import { StatusStrip } from './status-strip';
 
@@ -70,6 +73,7 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
     watchOrder(userId, orderId, next, fail)
   );
   const [dialog, setDialog] = useState<'advance' | 'cancel' | null>(null);
+  const [sellerStep, setSellerStep] = useState<{ merchantId: string; from: OrderStatus; to: OrderStatus } | null>(null);
 
   if (!valid) {
     return (
@@ -157,7 +161,19 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
             {fulfilmentEntries.map(([m, e]) => (
               <li key={m} className="flex items-center justify-between gap-3 rounded-md bg-ground px-3 py-1.5">
                 <code className="truncate text-sm">{m}</code>
-                <StatusBadge status={e.status} label={STATUS_LABEL[e.status] ?? e.status} />
+                <span className="flex items-center gap-2">
+                  <StatusBadge status={e.status} label={STATUS_LABEL[e.status] ?? e.status} />
+                  {FULFILLING_ORDER.includes(order.status) && NEXT_STATUS[e.status] ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSellerStep({ merchantId: m, from: e.status, to: NEXT_STATUS[e.status]! })}
+                    >
+                      {NEXT_ACTION_LABEL[e.status]}
+                      <span className="sr-only"> for {m}</span>
+                    </Button>
+                  ) : null}
+                </span>
               </li>
             ))}
           </ul>
@@ -308,9 +324,36 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
           confirmLabel={NEXT_ACTION_LABEL[shown] ?? 'Update'}
           onConfirm={() =>
             mutate(() => updateOrderStatus({ userId: order.userId, orderId: order.id, status: next }), {
-              success: `Order ${order.orderNumber} marked ${STATUS_LABEL[next].toLowerCase()}.`,
+              success: merchantId
+                ? `Your part of order ${order.orderNumber} is ${STATUS_LABEL[next].toLowerCase()}.`
+                : `Order ${order.orderNumber} marked ${STATUS_LABEL[next].toLowerCase()}.`,
               error: 'Status not updated.',
             })
+          }
+        />
+      ) : null}
+      {sellerStep ? (
+        <ConfirmDialog
+          open
+          onClose={() => setSellerStep(null)}
+          tone="primary"
+          title={`${NEXT_ACTION_LABEL[sellerStep.from]} for ${sellerStep.merchantId}?`}
+          description={`Only this seller's part of order ${order.orderNumber} moves to ${STATUS_LABEL[sellerStep.to].toLowerCase()}. This cannot be undone.`}
+          confirmLabel={NEXT_ACTION_LABEL[sellerStep.from] ?? 'Update'}
+          onConfirm={() =>
+            mutate(
+              () =>
+                updateOrderStatus({
+                  userId: order.userId,
+                  orderId: order.id,
+                  status: sellerStep.to,
+                  merchantId: sellerStep.merchantId,
+                }),
+              {
+                success: `${sellerStep.merchantId} marked ${STATUS_LABEL[sellerStep.to].toLowerCase()}.`,
+                error: 'Status not updated.',
+              }
+            )
           }
         />
       ) : null}

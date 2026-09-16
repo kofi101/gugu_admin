@@ -23,12 +23,28 @@ import type { Category, Product, SubCategory } from '@/lib/types';
 import { uploadPicked } from '@/lib/upload-picked';
 import { useLive } from '@/lib/use-data';
 
-const MONEY = /^\d{1,7}(\.\d{1,2})?$/;
+/** Limits mirror the product write rules in gugu_2.0/router/platform_contract.md. */
+export const PRODUCT_LIMITS = {
+  nameMax: 300,
+  descriptionMax: 10000,
+  priceMin: 0.01,
+  priceMax: 10_000_000,
+  stockMax: 100_000,
+  textMax: 2000,
+  listMax: 20,
+} as const;
+
+const MONEY = /^\d{1,8}(\.\d{1,2})?$/;
+const highlightCount = (v: string) => v.split('\n').filter((l) => l.trim()).length;
 
 const schema = z
   .object({
-    name: z.string().trim().min(3, 'Name must be at least 3 characters.').max(120, 'Keep the name under 120 characters.'),
-    description: z.string().trim().max(5000, 'Keep the description under 5,000 characters.'),
+    name: z
+      .string()
+      .trim()
+      .min(1, 'Enter a product name.')
+      .max(PRODUCT_LIMITS.nameMax, 'Keep the name to 300 characters or fewer.'),
+    description: z.string().trim().max(PRODUCT_LIMITS.descriptionMax, 'Keep the description to 10,000 characters or fewer.'),
     categoryId: z.string().min(1, 'Choose a category.'),
     subCategoryId: z.string().min(1, 'Choose a subcategory.'),
     price: z
@@ -36,7 +52,8 @@ const schema = z
       .trim()
       .min(1, 'Enter a price.')
       .regex(MONEY, 'Enter an amount like 120 or 120.50.')
-      .refine((v) => Number(v) > 0, 'Price must be more than zero.'),
+      .refine((v) => Number(v) >= PRODUCT_LIMITS.priceMin, 'Price must be at least GH₵0.01.')
+      .refine((v) => Number(v) <= PRODUCT_LIMITS.priceMax, 'Price can be at most GH₵10,000,000.'),
     discountPrice: z
       .string()
       .trim()
@@ -46,14 +63,19 @@ const schema = z
       .trim()
       .min(1, 'Enter how many you have in stock.')
       .regex(/^\d{1,6}$/, 'Enter a whole number, 0 or more.')
-      .refine((v) => Number(v) <= 100000, 'Stock can be at most 100,000.'),
-    highlights: z.string().max(2000, 'Keep highlights under 2,000 characters.'),
-    returnPolicy: z.string().trim().max(500, 'Keep this under 500 characters.'),
+      .refine((v) => Number(v) <= PRODUCT_LIMITS.stockMax, 'Stock can be at most 100,000.'),
+    highlights: z
+      .string()
+      .refine((v) => highlightCount(v) <= PRODUCT_LIMITS.listMax, 'Use at most 20 highlights.'),
+    returnPolicy: z.string().trim().max(PRODUCT_LIMITS.textMax, 'Keep this to 2,000 characters or fewer.'),
   })
   .superRefine((v, ctx) => {
+    // discountPrice: empty or 0 means no sale; otherwise 0.01 <= sale < price.
     if (v.discountPrice === '' || !MONEY.test(v.price) || !MONEY.test(v.discountPrice)) return;
     const sale = Number(v.discountPrice);
-    if (sale <= 0) ctx.addIssue({ code: 'custom', path: ['discountPrice'], message: 'Sale price must be more than zero.' });
+    if (sale === 0) return;
+    if (sale < PRODUCT_LIMITS.priceMin)
+      ctx.addIssue({ code: 'custom', path: ['discountPrice'], message: 'Sale price must be at least GH₵0.01, or 0 for no sale.' });
     else if (sale >= Number(v.price))
       ctx.addIssue({ code: 'custom', path: ['discountPrice'], message: 'Sale price must be lower than the price.' });
   });
@@ -79,7 +101,7 @@ function toHighlights(text: string): string[] {
     .split('\n')
     .map((l) => l.trim())
     .filter(Boolean)
-    .slice(0, 12);
+    .slice(0, PRODUCT_LIMITS.listMax);
 }
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a ?? '') === JSON.stringify(b ?? '');
@@ -165,7 +187,7 @@ export function ProductForm({ product }: { product?: Product }) {
       // Price, stock and policy can change on a live product without review.
       const commercial = {
         price: Number(values.price),
-        discountPrice: values.discountPrice ? Number(values.discountPrice) : null,
+        discountPrice: values.discountPrice && Number(values.discountPrice) > 0 ? Number(values.discountPrice) : null,
         currency: 'GHS',
         stockQuantity: Number(values.stockQuantity),
         returnPolicy: values.returnPolicy,
@@ -238,7 +260,8 @@ export function ProductForm({ product }: { product?: Product }) {
       <Panel title="Photos" bodyClassName="px-4 py-4 sm:px-5">
         <ImagePicker
           label="Product photos"
-          hint="Up to 8 JPG, PNG or WebP images, 5 MB each. The first image is the cover."
+          hint="Up to 20 JPG, PNG or WebP images, 5 MB each. The first image is the cover."
+          max={PRODUCT_LIMITS.listMax}
           value={images}
           onChange={(next) => {
             setImages(next);
@@ -315,7 +338,7 @@ export function ProductForm({ product }: { product?: Product }) {
         <Field
           label="Sale price (GH₵)"
           error={errors.discountPrice?.message}
-          hint={salePreview !== null ? `Shoppers pay ${formatMoney(salePreview)}` : 'Optional. Must be lower than the price.'}
+          hint={salePreview !== null ? `Shoppers pay ${formatMoney(salePreview)}` : 'Optional. Lower than the price; leave empty or 0 for no sale.'}
         >
           {(p) => <Input {...p} inputMode="decimal" placeholder="None" className="tabular" {...register('discountPrice')} />}
         </Field>
@@ -325,7 +348,7 @@ export function ProductForm({ product }: { product?: Product }) {
       </Panel>
 
       <Panel title="Extra information" bodyClassName="grid gap-5 px-4 py-4 sm:px-5">
-        <Field label="Highlights" hint="One per line, up to 12. Shown as bullet points." error={errors.highlights?.message}>
+        <Field label="Highlights" hint="One per line, up to 20. Shown as bullet points." error={errors.highlights?.message}>
           {(p) => <Textarea {...p} rows={4} {...register('highlights')} />}
         </Field>
         <Field label="Return policy" hint="For example: Returns accepted within 7 days if unused." error={errors.returnPolicy?.message}>

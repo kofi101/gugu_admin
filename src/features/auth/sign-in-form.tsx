@@ -79,6 +79,11 @@ export function SignInForm() {
 
   return (
     <div className="flex flex-col gap-6">
+      {params.get('reason') === 'session-ended' && !formError ? (
+        <p role="status" className="rounded-lg border border-brand-200 bg-brand-50 px-3.5 py-3 text-[0.9375rem] text-brand-900">
+          Your account access changed, so you were signed out. Sign in again to continue.
+        </p>
+      ) : null}
       <Button variant="secondary" onClick={onGoogle} loading={googleBusy} disabled={busy} icon={<GoogleIcon />}>
         Continue with Google
       </Button>

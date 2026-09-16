@@ -39,7 +39,7 @@ function RoleDialog({ user, onClose, onDone }: { user: UserProfile; onClose: () 
     setBusy(true);
     try {
       await mutate(() => setUserRole({ uid: user.uid, role, ...(role === 'merchant' ? { merchantId } : {}) }), {
-        success: `${user.email ?? user.uid} is now ${ROLE_LABEL[role].toLowerCase()}. They see the change after signing in again.`,
+        success: `${user.email ?? user.uid} is now ${ROLE_LABEL[role].toLowerCase()}. They have been signed out and must sign in again.`,
         error: 'Role not changed.',
       });
       onDone();
@@ -98,6 +98,9 @@ function RoleDialog({ user, onClose, onDone }: { user: UserProfile; onClose: () 
             </Field>
           )
         ) : null}
+        <p className="text-sm text-ink-muted">
+          Changing a role signs this person out on every device. They need to sign in again to get the new access.
+        </p>
         {role === 'admin' && user.role !== 'admin' ? (
           <label className="flex items-start gap-2.5 rounded-lg border border-thread-300 bg-thread-50 p-3 text-[0.9375rem] text-thread-800">
             <input

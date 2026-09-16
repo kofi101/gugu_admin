@@ -35,6 +35,9 @@ export function describeError(error: unknown): string {
       case 'user-not-found':
       case 'invalid-email':
         return 'That email and password do not match an account.';
+      case 'user-token-expired':
+      case 'invalid-user-token':
+        return 'Your access changed or your session ended. Sign out and sign in again.';
       case 'too-many-requests':
         return 'Too many attempts. Wait a few minutes, then try again.';
       case 'popup-closed-by-user':
