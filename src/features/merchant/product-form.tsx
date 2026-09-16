@@ -34,6 +34,9 @@ export const PRODUCT_LIMITS = {
   listMax: 20,
 } as const;
 
+/** Same pattern as the product rules' noContactInfo(): no off-platform contact or payment details. */
+const CONTACT_INFO = /(momo|mobile money|whatsapp|[0-9+][0-9 ()+-]{8,}[0-9])/s;
+
 const MONEY = /^\d{1,8}(\.\d{1,2})?$/;
 const highlightCount = (v: string) => v.split('\n').filter((l) => l.trim()).length;
 
@@ -67,7 +70,14 @@ const schema = z
     highlights: z
       .string()
       .refine((v) => highlightCount(v) <= PRODUCT_LIMITS.listMax, 'Use at most 20 highlights.'),
-    returnPolicy: z.string().trim().max(PRODUCT_LIMITS.textMax, 'Keep this to 2,000 characters or fewer.'),
+    returnPolicy: z
+      .string()
+      .trim()
+      .max(PRODUCT_LIMITS.textMax, 'Keep this to 2,000 characters or fewer.')
+      .refine(
+        (v) => !CONTACT_INFO.test(v.toLowerCase()),
+        'Remove phone numbers, MoMo, mobile money or WhatsApp details. Customers pay and contact you through GUGU.'
+      ),
   })
   .superRefine((v, ctx) => {
     // discountPrice: empty or 0 means no sale; otherwise 0.01 <= sale < price.

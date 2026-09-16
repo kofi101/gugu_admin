@@ -11,6 +11,7 @@ import {
 } from 'firebase/auth';
 import { clearIndexedDbPersistence, terminate } from 'firebase/firestore';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { REAUTH_EVENT } from './data';
 import { firebase } from './firebase';
 import type { Role } from './types';
 
@@ -109,6 +110,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     window.location.replace(reason ? `/sign-in?reason=${reason}` : '/sign-in');
   }, []);
+
+  // Any callable answering REAUTH_REQUIRED ends the session everywhere in the app.
+  useEffect(() => {
+    const onReauth = () => {
+      void signOut('session-ended');
+    };
+    window.addEventListener(REAUTH_EVENT, onReauth);
+    return () => window.removeEventListener(REAUTH_EVENT, onReauth);
+  }, [signOut]);
 
   const refreshClaims = useCallback(async () => {
     const user = firebase().auth.currentUser;

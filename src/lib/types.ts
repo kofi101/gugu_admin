@@ -53,9 +53,22 @@ export type Order = {
   };
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
-  statusHistory?: { status: OrderStatus; at?: Timestamp; by?: string }[];
+  statusHistory?: { status: OrderStatus | 'partially_cancelled'; at?: Timestamp; by?: string }[];
   /** Per-merchant fulfilment; the order status is the least-advanced entry. */
-  fulfilment?: Record<string, { status: OrderStatus; history?: { status: OrderStatus; at?: Timestamp; by?: string }[] }>;
+  fulfilment?: Record<
+    string,
+    {
+      status: OrderStatus;
+      deliveredAt?: Timestamp;
+      history?: { status: OrderStatus | 'partially_cancelled'; at?: Timestamp; by?: string }[];
+    }
+  >;
+  /** Merchants whose undelivered parts were cancelled; delivered parts are kept. */
+  cancelledMerchantIds?: string[];
+  /** GHS owed back to the customer for cancelled parts of a paid order. */
+  refundAmount?: number;
+  /** A merchant marked delivery within minutes of placement: admin review. */
+  suspiciousFulfilment?: boolean;
   /* Server bookkeeping, read-only. */
   shippingOptionId?: string | null;
   cancelReason?: string;

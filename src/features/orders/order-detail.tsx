@@ -17,6 +17,8 @@ import {
   ADMIN_CANCELLABLE,
   NEXT_ACTION_LABEL,
   NEXT_STATUS,
+  cancelPreview,
+  historyLabel,
   merchantCanCancel,
   nextStatusFor,
   statusFor,
@@ -59,6 +61,27 @@ function DetailSkeleton() {
         <Skeleton className="h-64 rounded-xl" />
       </div>
     </div>
+  );
+}
+
+function CancelSummary({ order }: { order: Order }) {
+  const p = cancelPreview(order);
+  const units = p.lines.reduce((n, l) => n + (Number(l.quantity) || 0), 0);
+  return (
+    <span className="flex flex-col gap-2">
+      <span>
+        {p.keptMerchantIds.length
+          ? `The undelivered part is cancelled: ${units} ${units === 1 ? 'item' : 'items'} from ${p.merchantIds.join(', ')}. Delivered items from ${p.keptMerchantIds.join(', ')} are kept.`
+          : `All ${units} ${units === 1 ? 'item' : 'items'} are cancelled.`}{' '}
+        Cancelled items go back into stock.
+      </span>
+      <span>
+        {p.refund !== null
+          ? `The customer paid, so ${formatMoney(p.refund)} will be marked for refund${p.keptMerchantIds.length ? '' : ', including delivery'}.`
+          : 'Nothing was paid, so there is nothing to refund.'}{' '}
+        This cannot be undone.
+      </span>
+    </span>
   );
 }
 
@@ -119,6 +142,7 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
   const next = nextStatusFor(order, merchantId);
   const canCancel =
     mode === 'admin' ? ADMIN_CANCELLABLE.includes(order.status) : merchantId ? merchantCanCancel(order, merchantId) : false;
+  const preview = cancelPreview(order);
   const fulfilmentEntries = mode === 'admin' && order.fulfilment ? Object.entries(order.fulfilment) : [];
   const ownHistory = merchantId ? order.fulfilment?.[merchantId]?.history : undefined;
   const history = ownHistory?.length ? ownHistory : (order.statusHistory ?? []);
@@ -150,17 +174,32 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
 
       <Panel className="mb-6" bodyClassName="px-4 py-5 sm:px-5">
         <StatusStrip status={shown} />
-        {merchantId && order.merchantIds.length > 1 && shown !== order.status ? (
+        {merchantId && order.fulfilment?.[merchantId]?.deliveredAt ? (
+          <p className="mt-3 text-sm text-ink-muted">
+            You marked your part delivered {formatDateTime(order.fulfilment[merchantId].deliveredAt)}.
+          </p>
+        ) : null}
+        {merchantId && shown === 'cancelled' && order.status === 'delivered' ? (
+          <p className="mt-3 text-[0.9375rem]">
+            Your part of this order was cancelled and its stock returned. Other sellers&apos; delivered items were kept.
+          </p>
+        ) : null}
+        {merchantId && order.merchantIds.length > 1 && shown !== order.status && shown !== 'cancelled' ? (
           <p className="mt-3 text-sm text-ink-muted">
             Your part is {STATUS_LABEL[shown].toLowerCase()}. The whole order shows as{' '}
             {STATUS_LABEL[order.status].toLowerCase()} until every seller catches up.
           </p>
         ) : null}
-        {fulfilmentEntries.length > 1 ? (
+        {fulfilmentEntries.length > 1 || order.cancelledMerchantIds?.length ? (
           <ul className="mt-4 grid gap-1.5 text-[0.9375rem] sm:grid-cols-2" aria-label="Fulfilment by seller">
             {fulfilmentEntries.map(([m, e]) => (
               <li key={m} className="flex items-center justify-between gap-3 rounded-md bg-ground px-3 py-1.5">
-                <code className="truncate text-sm">{m}</code>
+                <span className="min-w-0">
+                  <code className="block truncate text-sm">{m}</code>
+                  {e.deliveredAt ? (
+                    <span className="block text-[0.8125rem] text-ink-muted">Delivered {formatDateTime(e.deliveredAt)}</span>
+                  ) : null}
+                </span>
                 <span className="flex items-center gap-2">
                   <StatusBadge status={e.status} label={STATUS_LABEL[e.status] ?? e.status} />
                   {FULFILLING_ORDER.includes(order.status) && NEXT_STATUS[e.status] ? (
@@ -188,14 +227,30 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
             <span className="font-semibold">Cancellation reason:</span> {order.cancelReason}
           </p>
         ) : null}
-        {mode === 'admin' && (order.refundRequired || order.paymentReviewRequired) ? (
+        {mode === 'admin' && order.status === 'delivered' && order.cancelledMerchantIds?.length ? (
+          <p className="mt-3 text-[0.9375rem]">
+            Partly cancelled: {order.cancelledMerchantIds.join(', ')}. Delivered parts were kept.
+          </p>
+        ) : null}
+        {mode === 'admin' && (order.refundRequired || order.paymentReviewRequired || order.suspiciousFulfilment) ? (
           <ul className="mt-4 flex flex-col gap-2">
             {order.refundRequired ? (
               <li className="flex items-start gap-2 rounded-lg border border-bad-700/25 bg-bad-50 px-3 py-2.5 text-[0.9375rem] text-bad-700">
                 <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
                 <span>
-                  <strong className="font-semibold">Refund required.</strong> This order was paid and then cancelled.
-                  Refund the customer through ExpressPay.
+                  <strong className="font-semibold">
+                    Refund required{typeof order.refundAmount === 'number' ? `: ${formatMoney(order.refundAmount)}` : ''}.
+                  </strong>{' '}
+                  Paid items were cancelled. Refund the customer through ExpressPay.
+                </span>
+              </li>
+            ) : null}
+            {order.suspiciousFulfilment ? (
+              <li className="flex items-start gap-2 rounded-lg border border-thread-300 bg-thread-50 px-3 py-2.5 text-[0.9375rem] text-thread-800">
+                <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
+                <span>
+                  <strong className="font-semibold">Check this delivery.</strong> A seller marked it delivered within
+                  minutes of the order being placed.
                 </span>
               </li>
             ) : null}
@@ -298,7 +353,7 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
               <ol className="flex flex-col gap-3">
                 {[...history].reverse().map((h, i) => (
                   <li key={i} className="flex items-baseline justify-between gap-4 text-[0.9375rem]">
-                    <span className="font-medium">{STATUS_LABEL[h.status] ?? humanize(h.status)}</span>
+                    <span className="font-medium">{historyLabel(h.status)}</span>
                     <span className="text-sm text-ink-muted">{formatDateTime(h.at)}</span>
                   </li>
                 ))}
@@ -362,13 +417,15 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
           open={dialog === 'cancel'}
           onClose={() => setDialog(null)}
           title={`Cancel order ${order.orderNumber}?`}
-          description="The items go back into stock and the order is closed. This cannot be undone."
+          description={<CancelSummary order={order} />}
           confirmLabel="Cancel order"
           withNote
           noteLabel="Reason"
           onConfirm={(reason) =>
             mutate(() => cancelOrder({ orderId: order.id, userId: order.userId, reason: reason || undefined }), {
-              success: `Order ${order.orderNumber} cancelled.`,
+              success: preview.keptMerchantIds.length
+                ? `Undelivered items in order ${order.orderNumber} cancelled.`
+                : `Order ${order.orderNumber} cancelled.`,
               error: 'Order not cancelled.',
             })
           }

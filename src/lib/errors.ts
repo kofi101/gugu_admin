@@ -3,6 +3,7 @@ import { FirebaseError } from 'firebase/app';
 /** Callable Function error codes (HttpsError message) from the platform contract. */
 const FUNCTION_CODES: Record<string, string> = {
   SIGN_IN_REQUIRED: 'Your session has expired. Sign in again.',
+  REAUTH_REQUIRED: 'Your account access changed. Signing you out so you can sign in again.',
   ADMIN_ONLY: 'Only GUGU staff can do this. If your role changed recently, sign out and back in.',
   MERCHANT_OR_ADMIN_ONLY: 'Only sellers and GUGU staff can do this. If you were just approved, sign out and back in.',
   NOT_YOUR_ORDER: 'This order does not include any of your products.',

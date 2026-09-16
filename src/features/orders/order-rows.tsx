@@ -48,6 +48,10 @@ export function OrderRows({
               </span>
               <span className="order-4 flex flex-wrap justify-end gap-1.5 justify-self-end sm:order-none">
                 {!merchantId && order.refundRequired ? <Badge tone="bad">Refund needed</Badge> : null}
+                {!merchantId && order.suspiciousFulfilment ? <Badge tone="pending">Check delivery</Badge> : null}
+                {!merchantId && order.status === 'delivered' && order.cancelledMerchantIds?.length ? (
+                  <Badge tone="neutral">Partly cancelled</Badge>
+                ) : null}
                 {!merchantId && order.paymentReviewRequired ? <Badge tone="pending">Check payment</Badge> : null}
                 <StatusBadge status={statusFor(order, merchantId)} label={STATUS_LABEL[statusFor(order, merchantId)]} />
               </span>

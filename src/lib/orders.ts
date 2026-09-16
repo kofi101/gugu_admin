@@ -20,6 +20,11 @@ export const STATUS_LABEL: Record<OrderStatus, string> = {
   payment_failed: 'Payment failed',
 };
 
+export function historyLabel(status: string): string {
+  if (status === 'partially_cancelled') return 'Partly cancelled';
+  return STATUS_LABEL[status as OrderStatus] ?? status;
+}
+
 /** The fulfilment path shown as a woven strip. */
 export const FULFILMENT_STEPS: OrderStatus[] = ['placed', 'processing', 'shipped', 'delivered'];
 
@@ -36,7 +41,7 @@ export const NEXT_ACTION_LABEL: Partial<Record<OrderStatus, string>> = {
   shipped: 'Mark as delivered',
 };
 
-export const ADMIN_CANCELLABLE: OrderStatus[] = ['awaiting_payment', 'placed', 'processing'];
+export const ADMIN_CANCELLABLE: OrderStatus[] = ['awaiting_payment', 'placed', 'processing', 'shipped'];
 
 const FULFILLING: OrderStatus[] = ['placed', 'processing', 'shipped'];
 
@@ -66,6 +71,35 @@ export function merchantCanCancel(order: Order, merchantId: string): boolean {
   );
 }
 
+export type CancelPreview = {
+  /** Merchants whose parts will be cancelled (everything not yet delivered). */
+  merchantIds: string[];
+  lines: OrderLine[];
+  /** Delivered parts that stay as they are. */
+  keptMerchantIds: string[];
+  /** What becomes refundable if the order was paid; null when unpaid. */
+  refund: number | null;
+};
+
+/** Mirrors the backend cancel: undelivered parts are cancelled, delivered parts are kept. */
+export function cancelPreview(order: Order): CancelPreview {
+  if (order.status === 'awaiting_payment') {
+    return { merchantIds: order.merchantIds, lines: order.lines, keptMerchantIds: [], refund: null };
+  }
+  const entries = order.fulfilment ?? {};
+  const merchantIds = order.merchantIds.filter((m) => {
+    const s = entries[m]?.status;
+    return s !== 'delivered' && s !== 'cancelled';
+  });
+  const keptMerchantIds = order.merchantIds.filter((m) => entries[m]?.status === 'delivered');
+  const lines = order.lines.filter((l) => merchantIds.includes(l.merchantId));
+  const refund =
+    order.paymentStatus === 'paid'
+      ? linesTotal(lines) + (keptMerchantIds.length === 0 ? Number(order.shippingFee) || 0 : 0)
+      : null;
+  return { merchantIds, lines, keptMerchantIds, refund };
+}
+
 export function linesFor(order: Order, merchantId: string | null): OrderLine[] {
   return merchantId ? order.lines.filter((l) => l.merchantId === merchantId) : order.lines;
 }
@@ -80,6 +114,7 @@ export function linesTotal(lines: OrderLine[]): number {
  */
 export function isRevenue(order: Order, merchantId: string | null = null): boolean {
   if (order.status === 'cancelled' || order.status === 'payment_failed') return false;
+  if (statusFor(order, merchantId) === 'cancelled') return false;
   return order.paymentStatus === 'paid' || statusFor(order, merchantId) === 'delivered';
 }
 

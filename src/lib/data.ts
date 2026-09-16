@@ -225,11 +225,21 @@ export async function getMerchantName(merchantId: string): Promise<string | null
 
 /* ---------- Callable Functions (contract names) ---------- */
 
+export const REAUTH_EVENT = 'gugu:reauth-required';
+
 function callable<I, O>(name: string) {
   return async (input: I): Promise<O> => {
     const fn = httpsCallable<I, O>(firebase().functions, name);
-    const res = await fn(input);
-    return res.data;
+    try {
+      const res = await fn(input);
+      return res.data;
+    } catch (error) {
+      // Claims changed after this token was issued: the session must be renewed.
+      if ((error as { message?: string } | null)?.message === 'REAUTH_REQUIRED' && typeof window !== 'undefined') {
+        window.dispatchEvent(new Event(REAUTH_EVENT));
+      }
+      throw error;
+    }
   };
 }
 
