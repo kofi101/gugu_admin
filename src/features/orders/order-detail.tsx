@@ -18,6 +18,7 @@ import {
   NEXT_ACTION_LABEL,
   NEXT_STATUS,
   cancelPreview,
+  cashDue,
   historyLabel,
   merchantCanCancel,
   nextStatusFor,
@@ -78,7 +79,9 @@ function CancelSummary({ order }: { order: Order }) {
       <span>
         {p.refund !== null
           ? `The customer paid, so ${formatMoney(p.refund)} will be marked for refund${p.keptMerchantIds.length ? '' : ', including delivery'}.`
-          : 'Nothing was paid, so there is nothing to refund.'}{' '}
+          : cashDue(order) !== null && order.status !== 'awaiting_payment'
+            ? `Cash to collect on delivery drops from ${formatMoney(cashDue(order))} to ${formatMoney(cashDue(order, p.cancelledAmount))}.`
+            : 'Nothing was paid, so there is nothing to refund.'}{' '}
         This cannot be undone.
       </span>
     </span>
@@ -345,6 +348,24 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
               items={[
                 { label: 'Method', value: PAYMENT_LABEL[order.paymentMethod] ?? humanize(order.paymentMethod) },
                 { label: 'Status', value: <StatusBadge status={order.paymentStatus} /> },
+                ...(cashDue(order) !== null
+                  ? [
+                      {
+                        label: order.paymentStatus === 'paid' ? 'Cash collected' : 'Cash to collect',
+                        value: (
+                          <span className="font-semibold tabular">
+                            {formatMoney(cashDue(order))}
+                            {order.merchantIds.length > 1 ? (
+                              <span className="block text-sm font-normal text-ink-muted">Whole order, all sellers</span>
+                            ) : null}
+                          </span>
+                        ),
+                      },
+                    ]
+                  : []),
+                ...(order.cancelledAmount
+                  ? [{ label: 'Cancelled', value: <span className="tabular">−{formatMoney(order.cancelledAmount)}</span> }]
+                  : []),
               ]}
             />
           </Panel>

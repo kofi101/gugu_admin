@@ -67,6 +67,8 @@ export type Order = {
   cancelledMerchantIds?: string[];
   /** GHS owed back to the customer for cancelled parts of a paid order. */
   refundAmount?: number;
+  /** GHS of cancelled lines (+ shipping if nothing was delivered); cash due on delivery = orderTotal - cancelledAmount. */
+  cancelledAmount?: number;
   /** A merchant marked delivery within minutes of placement: admin review. */
   suspiciousFulfilment?: boolean;
   /* Server bookkeeping, read-only. */

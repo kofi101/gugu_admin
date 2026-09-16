@@ -40,7 +40,7 @@ function Kpis({ orders, products }: { orders: Order[] | null; products: Product[
   const live = products ? products.filter((p) => p.isActive && p.approvalStatus === 'approved').length : null;
 
   const cells: { label: string; value: string | null; note: string; href?: string }[] = [
-    { label: 'Earned', value: revenue === null ? null : formatMoney(revenue), note: 'Paid or delivered orders' },
+    { label: 'Earned', value: revenue === null ? null : formatMoney(revenue), note: 'Your delivered items' },
     {
       label: 'To fulfil',
       value: toFulfil === null ? null : formatCount(toFulfil),

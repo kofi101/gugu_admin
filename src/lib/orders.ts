@@ -79,12 +79,20 @@ export type CancelPreview = {
   keptMerchantIds: string[];
   /** What becomes refundable if the order was paid; null when unpaid. */
   refund: number | null;
+  /** GHS removed from what the customer owes. */
+  cancelledAmount: number;
 };
 
 /** Mirrors the backend cancel: undelivered parts are cancelled, delivered parts are kept. */
 export function cancelPreview(order: Order): CancelPreview {
   if (order.status === 'awaiting_payment') {
-    return { merchantIds: order.merchantIds, lines: order.lines, keptMerchantIds: [], refund: null };
+    return {
+      merchantIds: order.merchantIds,
+      lines: order.lines,
+      keptMerchantIds: [],
+      refund: null,
+      cancelledAmount: Number(order.orderTotal) || 0,
+    };
   }
   const entries = order.fulfilment ?? {};
   const merchantIds = order.merchantIds.filter((m) => {
@@ -93,11 +101,10 @@ export function cancelPreview(order: Order): CancelPreview {
   });
   const keptMerchantIds = order.merchantIds.filter((m) => entries[m]?.status === 'delivered');
   const lines = order.lines.filter((l) => merchantIds.includes(l.merchantId));
-  const refund =
-    order.paymentStatus === 'paid'
-      ? linesTotal(lines) + (keptMerchantIds.length === 0 ? Number(order.shippingFee) || 0 : 0)
-      : null;
-  return { merchantIds, lines, keptMerchantIds, refund };
+  // Same amount the backend adds to cancelledAmount (and refundAmount when paid).
+  const cancelledAmount = round2(linesTotal(lines) + (keptMerchantIds.length === 0 ? Number(order.shippingFee) || 0 : 0));
+  const refund = order.paymentStatus === 'paid' ? cancelledAmount : null;
+  return { merchantIds, lines, keptMerchantIds, refund, cancelledAmount };
 }
 
 export function linesFor(order: Order, merchantId: string | null): OrderLine[] {
@@ -114,8 +121,18 @@ export function linesTotal(lines: OrderLine[]): number {
  */
 export function isRevenue(order: Order, merchantId: string | null = null): boolean {
   if (order.status === 'cancelled' || order.status === 'payment_failed') return false;
-  if (statusFor(order, merchantId) === 'cancelled') return false;
-  return order.paymentStatus === 'paid' || statusFor(order, merchantId) === 'delivered';
+  // A merchant has earned only what it delivered; cancelled parts never count.
+  return statusFor(order, merchantId) === 'delivered';
+}
+
+export const ON_DELIVERY = ['cash_on_delivery', 'mobile_money_on_delivery'];
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
+/** Cash the rider collects on an on-delivery order: orderTotal - cancelledAmount (null for online payment). */
+export function cashDue(order: Order, extraCancelled = 0): number | null {
+  if (!ON_DELIVERY.includes(order.paymentMethod)) return null;
+  return Math.max(0, round2((Number(order.orderTotal) || 0) - (Number(order.cancelledAmount) || 0) - extraCancelled));
 }
 
 export function unitsFor(lines: OrderLine[]): number {
