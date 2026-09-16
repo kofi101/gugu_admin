@@ -205,7 +205,14 @@ export function ProductForm({ product }: { product?: Product }) {
   const salePreview = MONEY.test(price) && MONEY.test(discount) && Number(discount) < Number(price) ? Number(discount) : null;
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-6">
+    <form
+      onSubmit={handleSubmit(onSubmit, () => {
+        if (images.length === 0) setImageError('Add at least one photo of the product.');
+        toast.error('Some details need fixing. Check the highlighted fields.');
+      })}
+      noValidate
+      className="flex flex-col gap-6"
+    >
       {product ? (
         <div className="flex items-start gap-3 rounded-[var(--radius-panel)] border border-thread-300 bg-thread-50 px-4 py-3 text-[0.9375rem] text-thread-800">
           <Info className="mt-0.5 size-4 shrink-0" aria-hidden />

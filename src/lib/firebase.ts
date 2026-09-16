@@ -63,10 +63,13 @@ export function firebase(): Services {
 
   if (useEmulators) {
     const host = window.location.hostname || '127.0.0.1';
-    connectAuthEmulator(auth, `http://${host}:9099`, { disableWarnings: true });
-    connectFirestoreEmulator(db, host, 8080);
-    connectStorageEmulator(storage, host, 9199);
-    connectFunctionsEmulator(functions, host, 5001);
+    const port = (value: string | undefined, fallback: number) => Number(value) || fallback;
+    connectAuthEmulator(auth, `http://${host}:${port(process.env.NEXT_PUBLIC_EMULATOR_AUTH_PORT, 9099)}`, {
+      disableWarnings: true,
+    });
+    connectFirestoreEmulator(db, host, port(process.env.NEXT_PUBLIC_EMULATOR_FIRESTORE_PORT, 8080));
+    connectStorageEmulator(storage, host, port(process.env.NEXT_PUBLIC_EMULATOR_STORAGE_PORT, 9199));
+    connectFunctionsEmulator(functions, host, port(process.env.NEXT_PUBLIC_EMULATOR_FUNCTIONS_PORT, 5001));
   }
 
   services = { app, auth, db, storage, functions };

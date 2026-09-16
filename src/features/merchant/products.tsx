@@ -225,7 +225,7 @@ export function NewProduct() {
       <PageHeader
         back={<BackToProducts />}
         title="Add a product"
-        description="GUGU staff review new products, usually within a working day. You can edit it while it waits."
+        description="GUGU staff review new products before shoppers can see them. You can keep editing while it waits."
       />
       <ProductForm />
     </>
