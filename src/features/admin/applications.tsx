@@ -12,7 +12,7 @@ import { DataView, EmptyState, ListSkeleton } from '@/components/ui/states';
 import { reviewMerchantApplication, watchApplications } from '@/lib/data';
 import { describeError } from '@/lib/errors';
 import { firebase } from '@/lib/firebase';
-import { formatDate, humanize } from '@/lib/format';
+import { formatDate, titleize } from '@/lib/format';
 import { mutate } from '@/lib/notify';
 import type { MerchantApplication } from '@/lib/types';
 import { useLive } from '@/lib/use-data';
@@ -125,7 +125,7 @@ export function Applications() {
                       items={[
                         { label: 'Email', value: app.email || '—' },
                         { label: 'Phone', value: app.phone || '—' },
-                        { label: 'Location', value: [humanize(app.cityId), humanize(app.regionId)].filter((v) => v !== '—').join(', ') || '—' },
+                        { label: 'Location', value: [titleize(app.cityId), titleize(app.regionId)].filter(Boolean).join(', ') || '—' },
                         { label: 'About the business', value: app.description || '—' },
                         {
                           label: 'Documents',

@@ -37,7 +37,9 @@ export function StatusStrip({ status }: { status: OrderStatus }) {
               >
                 {done ? <Check className="size-3.5 shrink-0 text-brand-700" aria-hidden /> : null}
                 {STATUS_LABEL[step]}
-                <span className="sr-only">{done ? ' (done)' : current ? ' (current)' : ' (to do)'}</span>
+                {offPath ? null : (
+                  <span className="sr-only">{done ? ' (done)' : current ? ' (current)' : ' (to do)'}</span>
+                )}
               </span>
             </li>
           );

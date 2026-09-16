@@ -50,6 +50,15 @@ export function formatCount(n: number): string {
   return new Intl.NumberFormat('en-GH').format(n);
 }
 
+/** Turns ids like `greater_accra` into `Greater Accra`. */
+export function titleize(value: string | null | undefined): string {
+  if (!value) return '';
+  return value
+    .replace(/[_-]+/g, ' ')
+    .trim()
+    .replace(/\b\p{L}/gu, (c) => c.toUpperCase());
+}
+
 export function humanize(value: string | null | undefined): string {
   if (!value) return '—';
   const s = value.replace(/_/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
