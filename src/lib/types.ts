@@ -78,7 +78,7 @@ export type Product = {
   returnPolicy?: string;
   supportNote?: string;
   approvalStatus?: ApprovalStatus;
-  approvalNote?: string;
+  reviewNote?: string;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
 };
@@ -106,8 +106,10 @@ export type MerchantApplication = {
   description?: string;
   documentUrls?: string[];
   status: 'pending' | 'approved' | 'rejected';
-  note?: string;
+  reviewNote?: string | null;
+  merchantId?: string;
   createdAt?: Timestamp;
+  reviewedAt?: Timestamp;
 };
 
 export type Category = { id: string; name: string; sortOrder?: number | null };

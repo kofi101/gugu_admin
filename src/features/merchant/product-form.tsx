@@ -167,8 +167,8 @@ export function ProductForm({ product }: { product?: Product }) {
           <p>
             Currently <StatusBadge status={product.approvalStatus ?? 'pending'} />. Saving changes sends the product back to
             GUGU staff for approval, and it is hidden from shoppers until approved.
-            {product.approvalStatus === 'rejected' && product.approvalNote ? (
-              <span className="mt-1 block">Reviewer note: {product.approvalNote}</span>
+            {product.approvalStatus === 'rejected' && product.reviewNote ? (
+              <span className="mt-1 block">Reviewer note: {product.reviewNote}</span>
             ) : null}
           </p>
         </div>

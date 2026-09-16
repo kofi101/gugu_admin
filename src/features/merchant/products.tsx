@@ -148,8 +148,8 @@ export function MerchantProducts() {
                           <span aria-hidden className="mx-2 text-line-strong">|</span>
                           <StockText qty={p.stockQuantity} />
                         </p>
-                        {p.approvalStatus === 'rejected' && p.approvalNote ? (
-                          <p className="mt-1 text-sm text-bad-700">Reviewer: {p.approvalNote}</p>
+                        {p.approvalStatus === 'rejected' && p.reviewNote ? (
+                          <p className="mt-1 text-sm text-bad-700">Reviewer: {p.reviewNote}</p>
                         ) : null}
                       </div>
                       <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">

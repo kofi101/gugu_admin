@@ -36,7 +36,7 @@ export const NEXT_ACTION_LABEL: Partial<Record<OrderStatus, string>> = {
   shipped: 'Mark as delivered',
 };
 
-export const ADMIN_CANCELLABLE: OrderStatus[] = ['awaiting_payment', 'placed', 'processing', 'shipped'];
+export const ADMIN_CANCELLABLE: OrderStatus[] = ['awaiting_payment', 'placed', 'processing'];
 
 export function linesFor(order: Order, merchantId: string | null): OrderLine[] {
   return merchantId ? order.lines.filter((l) => l.merchantId === merchantId) : order.lines;
