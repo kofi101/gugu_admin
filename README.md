@@ -1,47 +1,60 @@
-# Isomorphic
+# GUGU seller dashboard
 
-## Getting Started
+The web dashboard for GUGU sellers (`merchant` claim) and GUGU staff (`admin` claim). It is a Next.js static export served from Firebase Hosting. All data goes through the Firebase web SDK. Firestore/Storage rules and callable Functions enforce security, as described in `gugu_2.0/router/platform_contract.md`. The route guards in this app only control what each role sees.
 
-System Requirements:
+## Requirements
 
-1. [Node.js 18.7^](https://nodejs.org/en) or later.
-2. [pnpm - package manager](https://pnpm.io/installation#using-npm) (recommended)
+- Node 20.9 or newer, npm
+- For local work against emulators: the `gugu_2.0` repo and firebase-tools
 
-First, install dependencies:
+## Setup
 
-```bash
-npm i
-# or
-pnpm install
-# or
-npm run install
+```sh
+npm ci
+cp .env.example .env.local   # fill in the Firebase web app config
+npm run dev                  # http://localhost:3000
 ```
 
-Now, run the development server:
+| Variable | Purpose |
+| --- | --- |
+| `NEXT_PUBLIC_FIREBASE_*` | Web app config from the Firebase console (project `gugu2-36268` once the web app is registered) |
+| `NEXT_PUBLIC_FIREBASE_FUNCTIONS_REGION` | Defaults to `us-central1` |
+| `NEXT_PUBLIC_USE_EMULATORS` | `true` to use the local Emulator Suite |
+| `NEXT_PUBLIC_EMULATOR_*_PORT` | Optional port overrides (auth 9099, firestore 8080, storage 9199, functions 5001) |
+| `NEXT_PUBLIC_SELL_ON_GUGU_URL` | Link on the "no access" screen to the storefront's Sell on GUGU page |
 
-```bash
-pnpm dev
-# or
+These values are compiled into the static build, so rebuild after changing them.
+
+## Against the emulators
+
+```sh
+# in gugu_2.0
+firebase emulators:start --project demo-gugu
+node functions/scripts/seed-emulator.js
+
+# here, with NEXT_PUBLIC_USE_EMULATORS=true and NEXT_PUBLIC_FIREBASE_PROJECT_ID=demo-gugu
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Seeded accounts (password `password123`): `admin@gugu.test`, `merchant@gugu.test` (store `techhub_gh`), `customer@gugu.test` (sees the no-access screen), and `applicant@gugu.test` (has a pending seller application).
 
-You can start editing the page by modifying `app/(hydrogen)/page.tsx`. The page auto-updates as you edit the file. to learn more about this template please visit our [official documentation](https://isomorphic-doc.vercel.app/).
+## Build and deploy
 
-checkout our `package.json` scripts for more command.
+```sh
+npm run lint
+npm run build        # writes the static site to out/
+```
 
-## Learn More.
+Deployment is done from `gugu_2.0`. Copy `out/` to `gugu_2.0/hosting/dashboard` and deploy the `dashboard` hosting target, following `gugu_2.0/router/deploy_runbook.md`. The export has no trailing slashes, which matches that target's `cleanUrls` setting.
 
-To learn more about Isomorphic, take a look at the following resources:
+Firestore indexes the dashboard's queries need are listed in `docs/firestore.indexes.dashboard.json`. Merge them into `gugu_2.0/firestore.indexes.json`.
 
-- [Isomorphic Documentation](https://isomorphic-doc.vercel.app/) - learn about isomorphic.
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+## Structure
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
-
-https://www.youtube.com/watch?v=MAtaT8BZEAo
+- `src/app`: routes. Each `page.tsx` sets the page title and renders a feature component.
+- `src/features/auth`: sign-in, password reset, the role gate, and the no-access screen
+- `src/features/merchant`: overview, products, product form, orders, and store profile
+- `src/features/admin`: queues, seller applications, product approvals, orders, categories, banners, and users
+- `src/features/orders`: order rows, order detail, and the fulfilment strip (shared by both areas)
+- `src/components/ui`: buttons, fields, panels, badges, dialogs, filters, image picker, and loading/empty/error states
+- `src/lib`: Firebase init, auth context, data access, callable wrappers, formatting (`formatMoney` is the only currency formatter), and uploads
