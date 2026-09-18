@@ -8,6 +8,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Field, Input } from '@/components/ui/field';
+import { useHydrated } from '@/hooks/use-hydrated';
 import { useAuth } from '@/lib/auth';
 import { describeError } from '@/lib/errors';
 import { safeNext } from './home-for-role';
@@ -33,6 +34,7 @@ export function SignInForm() {
   const { session, signInWithEmail, signInWithGoogle } = useAuth();
   const router = useRouter();
   const params = useSearchParams();
+  const hydrated = useHydrated();
   const [formError, setFormError] = useState<string | null>(null);
   const [googleBusy, setGoogleBusy] = useState(false);
   const {
@@ -84,7 +86,7 @@ export function SignInForm() {
           Your account access changed, so you were signed out. Sign in again to continue.
         </p>
       ) : null}
-      <Button variant="secondary" onClick={onGoogle} loading={googleBusy} disabled={busy} icon={<GoogleIcon />}>
+      <Button variant="secondary" onClick={onGoogle} loading={!hydrated || googleBusy} disabled={busy} icon={<GoogleIcon />}>
         Continue with Google
       </Button>
       <div className="flex items-center gap-3 text-sm text-ink-muted" aria-hidden>
@@ -92,7 +94,12 @@ export function SignInForm() {
         or use your email
         <span className="h-px flex-1 bg-line" />
       </div>
-      <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
+      {/* method="post" is a backstop, not the fix: a form with no method submits
+          as GET, so a click landing before hydration would put the password in
+          the URL, the browser history and any referrer. The button below is
+          disabled until React is listening; the method keeps credentials out of
+          the URL even if it somehow submits anyway. */}
+      <form method="post" onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
         {formError ? (
           <p role="alert" className="rounded-lg border border-bad-700/25 bg-bad-50 px-3.5 py-3 text-[0.9375rem] text-bad-700">
             {formError}
@@ -112,7 +119,11 @@ export function SignInForm() {
             Forgot password?
           </Link>
         </div>
-        <Button type="submit" loading={isSubmitting || signedInRole !== null} disabled={busy}>
+        {/* `loading`, not `disabled`: Button maps loading to disabled anyway, but
+            also sets aria-busy and shows a spinner that animates without JS —
+            so a keyboard or screen-reader user meets a busy control rather than
+            one silently missing from the tab order. */}
+        <Button type="submit" loading={!hydrated || isSubmitting || signedInRole !== null} disabled={busy}>
           Sign in
         </Button>
       </form>
