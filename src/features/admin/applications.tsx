@@ -9,6 +9,13 @@ import { ConfirmDialog } from '@/components/ui/dialog';
 import { FilterTabs } from '@/components/ui/filters';
 import { DefinitionList, PageHeader, Panel } from '@/components/ui/panel';
 import { DataView, EmptyState, ListSkeleton } from '@/components/ui/states';
+import {
+  APPLICATION_EMPTY_TITLE,
+  APPLICATION_FILTER_LABEL,
+  APPLICATION_STATUSES,
+  applicationStatusLabel,
+  canReview,
+} from '@/lib/applications';
 import { reviewMerchantApplication, watchApplications } from '@/lib/data';
 import { describeError } from '@/lib/errors';
 import { firebase } from '@/lib/firebase';
@@ -18,6 +25,15 @@ import type { MerchantApplication } from '@/lib/types';
 import { useLive } from '@/lib/use-data';
 
 type Status = MerchantApplication['status'];
+
+/** Second line of each empty list, where there is something useful to say. */
+const EMPTY_BODY: Record<Status, string | null> = {
+  pending: 'New Sell on GUGU applications appear here as soon as they are submitted.',
+  approved: null,
+  rejected: null,
+  withdrawn:
+    'People who cancelled their own application before GUGU decided on it. There is nothing to approve or reject here — if they apply again, the application comes back under To review.',
+};
 
 function DocumentLink({ value, index }: { value: string; index: number }) {
   const [error, setError] = useState<string | null>(null);
@@ -76,11 +92,7 @@ export function Applications() {
         label="Filter applications"
         value={status}
         onChange={setStatus}
-        options={[
-          { value: 'pending', label: 'To review' },
-          { value: 'approved', label: 'Approved' },
-          { value: 'rejected', label: 'Rejected' },
-        ]}
+        options={APPLICATION_STATUSES.map((s) => ({ value: s, label: APPLICATION_FILTER_LABEL[s] }))}
       />
       <DataView
         result={result}
@@ -94,9 +106,7 @@ export function Applications() {
         {(apps) =>
           apps.length === 0 ? (
             <Panel>
-              <EmptyState title={status === 'pending' ? 'No applications waiting' : `No ${status} applications`}>
-                {status === 'pending' ? 'New Sell on GUGU applications appear here as soon as they are submitted.' : null}
-              </EmptyState>
+              <EmptyState title={APPLICATION_EMPTY_TITLE[status]}>{EMPTY_BODY[status]}</EmptyState>
             </Panel>
           ) : (
             <ul className="flex flex-col gap-4">
@@ -106,7 +116,7 @@ export function Applications() {
                     title={app.businessName || 'Unnamed business'}
                     description={`Applied ${formatDate(app.createdAt)}`}
                     actions={
-                      app.status === 'pending' ? (
+                      canReview(app.status) ? (
                         <>
                           <Button variant="secondary" icon={<X aria-hidden />} onClick={() => setAction({ app, decision: 'reject' })}>
                             Reject
@@ -116,7 +126,7 @@ export function Applications() {
                           </Button>
                         </>
                       ) : (
-                        <StatusBadge status={app.status} />
+                        <StatusBadge status={app.status} label={applicationStatusLabel(app.status)} />
                       )
                     }
                     bodyClassName="px-4 py-4 sm:px-5"

@@ -160,6 +160,13 @@ export type Merchant = {
   ownerUid?: string;
 };
 
+/**
+ * `withdrawn` is written by the storefront when an applicant cancels their own
+ * pending application (gugu_2.0 firestore.rules, kofi101/gugu_front#15). It is
+ * not a decision GUGU made, and it is not reviewable.
+ */
+export type MerchantApplicationStatus = 'pending' | 'approved' | 'rejected' | 'withdrawn';
+
 export type MerchantApplication = {
   uid: string;
   businessName: string;
@@ -169,7 +176,7 @@ export type MerchantApplication = {
   cityId?: string;
   description?: string;
   documentUrls?: string[];
-  status: 'pending' | 'approved' | 'rejected';
+  status: MerchantApplicationStatus;
   reviewNote?: string | null;
   merchantId?: string;
   createdAt?: Timestamp;

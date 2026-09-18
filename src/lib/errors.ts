@@ -13,7 +13,10 @@ const FUNCTION_CODES: Record<string, string> = {
   ILLEGAL_TRANSITION: 'The order has already moved on. Refresh to see its current status.',
   ORDER_NOT_CANCELLABLE: 'This order can no longer be cancelled. Only awaiting-payment, placed or processing orders can be.',
   ORDER_NOT_FOUND: 'This order no longer exists.',
-  APPLICATION_NOT_PENDING: 'This application has already been reviewed.',
+  // Not always a review: an applicant may have cancelled it, or re-applied,
+  // since this page loaded.
+  APPLICATION_NOT_PENDING: 'This application is no longer waiting for a decision. Refresh to see where it stands.',
+  APPLICATION_CHANGED: 'The applicant changed this application while you were reading it. Refresh and review what they sent now.',
   APPLICATION_NOT_FOUND: 'This application no longer exists.',
   USER_IS_ADMIN: 'This applicant is GUGU staff and cannot also be a seller.',
   USER_ALREADY_MERCHANT: 'This applicant already manages a store.',
