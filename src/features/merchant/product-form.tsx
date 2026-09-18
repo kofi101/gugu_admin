@@ -261,8 +261,10 @@ export function productWriteBlockers(p: Product): WriteBlocker[] {
   // a write it really does refuse. A product stored live but never approved
   // (`isActive: true` with `approvalStatus` missing or not 'approved') fails
   //   request.resource.data.get('isActive', false) != true
-  //     || (resource.data.approvalStatus == 'approved'
-  //         && request.resource.data.approvalStatus == 'approved')
+  //     || (resource.data.get('approvalStatus', null) == 'approved'
+  //         && request.resource.data.get('approvalStatus', null) == 'approved')
+  // (quoted from firestore.rules:228-230 — `.get(…, null)`, not a bare field
+  // read, so it holds for a document that has no `approvalStatus` at all)
   // on every save that leaves `isActive` alone — that is, every commercial-only
   // save. It is fixable, but only by a save that also writes
   // `{ approvalStatus: 'pending', isActive: false }`, so `REVIEW_FORCING_FIELDS`
