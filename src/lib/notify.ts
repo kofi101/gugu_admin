@@ -16,7 +16,8 @@ export async function mutate<T>(
     toast.success(messages.success);
     return result;
   } catch (error) {
-    const detail = describeError(error);
+    // Every `mutate` call is a write, so a rules rejection is described as one.
+    const detail = describeError(error, 'write');
     toast.error(messages.error ? `${messages.error} ${detail}` : detail, { duration: 7000 });
     throw error;
   }

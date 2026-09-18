@@ -13,6 +13,15 @@ export type OrderStatus =
   | 'cancelled'
   | 'payment_failed';
 
+/**
+ * What a stored `status` field may actually hold. Firestore is not typed, so a
+ * legacy or newer-than-this-build value arrives as a plain string. Those are
+ * kept verbatim and rendered through `statusLabel()`; they are never cast to
+ * `OrderStatus`, because code that switches on the known set would then be
+ * silently wrong (and `STATUS_LABEL[status]` would be `undefined`).
+ */
+export type OrderStatusValue = OrderStatus | (string & {});
+
 export type PaymentStatus = 'unpaid' | 'pending' | 'paid' | 'failed';
 export type PaymentMethod = 'cash_on_delivery' | 'mobile_money_on_delivery' | 'expresspay';
 
@@ -32,7 +41,7 @@ export type Order = {
   /** users/{userId}/orders/{id} */
   userId: string;
   orderNumber: string;
-  status: OrderStatus;
+  status: OrderStatusValue;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   lines: OrderLine[];
@@ -53,14 +62,14 @@ export type Order = {
   };
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
-  statusHistory?: { status: OrderStatus | 'partially_cancelled'; at?: Timestamp; by?: string }[];
+  statusHistory?: { status: OrderStatusValue; at?: Timestamp; by?: string }[];
   /** Per-merchant fulfilment; the order status is the least-advanced entry. */
   fulfilment?: Record<
     string,
     {
-      status: OrderStatus;
+      status: OrderStatusValue;
       deliveredAt?: Timestamp;
-      history?: { status: OrderStatus | 'partially_cancelled'; at?: Timestamp; by?: string }[];
+      history?: { status: OrderStatusValue; at?: Timestamp; by?: string }[];
     }
   >;
   /** Merchants whose undelivered parts were cancelled; delivered parts are kept. */
@@ -99,6 +108,8 @@ export type Product = {
   highlights?: string[];
   returnPolicy?: string;
   supportNote?: string;
+  /** Contract cap: 10 ids. Older products may carry more and must be trimmed to save. */
+  relatedProductIds?: string[];
   approvalStatus?: ApprovalStatus;
   reviewNote?: string;
   createdAt?: Timestamp;

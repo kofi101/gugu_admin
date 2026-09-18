@@ -1,4 +1,5 @@
-import type { Order, OrderLine, OrderStatus } from './types';
+import { humanize } from './format';
+import type { Order, OrderLine, OrderStatus, OrderStatusValue } from './types';
 
 export const ORDER_STATUSES: OrderStatus[] = [
   'awaiting_payment',
@@ -20,9 +21,23 @@ export const STATUS_LABEL: Record<OrderStatus, string> = {
   payment_failed: 'Payment failed',
 };
 
-export function historyLabel(status: string): string {
+/** True only for the seven statuses this build understands. */
+export function isOrderStatus(value: unknown): value is OrderStatus {
+  return typeof value === 'string' && (ORDER_STATUSES as string[]).includes(value);
+}
+
+/**
+ * Total label lookup. A legacy or unexpected value reads back as itself
+ * ("Awaiting pickup") instead of throwing on `STATUS_LABEL[status].toLowerCase()`.
+ */
+export function statusLabel(status: OrderStatusValue | null | undefined): string {
+  if (typeof status !== 'string' || !status) return 'Unknown';
+  return isOrderStatus(status) ? STATUS_LABEL[status] : humanize(status);
+}
+
+export function historyLabel(status: OrderStatusValue): string {
   if (status === 'partially_cancelled') return 'Partly cancelled';
-  return STATUS_LABEL[status as OrderStatus] ?? status;
+  return statusLabel(status);
 }
 
 /** The fulfilment path shown as a woven strip. */
@@ -45,21 +60,41 @@ export const ADMIN_CANCELLABLE: OrderStatus[] = ['awaiting_payment', 'placed', '
 
 const FULFILLING: OrderStatus[] = ['placed', 'processing', 'shipped'];
 
+/** The order as a whole is being fulfilled (an unknown status never is). */
+export function isFulfilling(status: OrderStatusValue): boolean {
+  return (FULFILLING as string[]).includes(status);
+}
+
+/** The step this status may move to, or null. Unknown values never move. */
+export function nextStatus(status: OrderStatusValue): OrderStatus | null {
+  return isOrderStatus(status) ? (NEXT_STATUS[status] ?? null) : null;
+}
+
+/** Button text for `nextStatus`, or null when there is no next step. */
+export function nextActionLabel(status: OrderStatusValue): string | null {
+  return isOrderStatus(status) ? (NEXT_ACTION_LABEL[status] ?? null) : null;
+}
+
+/** Admins may cancel an order that has not been delivered or closed. */
+export function adminCanCancel(order: Order): boolean {
+  return (ADMIN_CANCELLABLE as string[]).includes(order.status);
+}
+
 /**
  * The status a merchant sees: its own `fulfilment[merchantId]` entry while the
  * order is in fulfilment or delivered, otherwise the order status (awaiting
  * payment, cancelled, payment failed).
  */
-export function statusFor(order: Order, merchantId: string | null): OrderStatus {
+export function statusFor(order: Order, merchantId: string | null): OrderStatusValue {
   if (!merchantId) return order.status;
-  if (!FULFILLING.includes(order.status) && order.status !== 'delivered') return order.status;
+  if (!isFulfilling(order.status) && order.status !== 'delivered') return order.status;
   return order.fulfilment?.[merchantId]?.status ?? order.status;
 }
 
 /** Next step this viewer may request, or null. Only offered while the order is in fulfilment. */
 export function nextStatusFor(order: Order, merchantId: string | null): OrderStatus | null {
-  if (!FULFILLING.includes(order.status)) return null;
-  return NEXT_STATUS[statusFor(order, merchantId)] ?? null;
+  if (!isFulfilling(order.status)) return null;
+  return nextStatus(statusFor(order, merchantId));
 }
 
 /** Merchants may cancel placed/processing orders that contain only their own lines. */

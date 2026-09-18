@@ -26,6 +26,21 @@ const FUNCTION_CODES: Record<string, string> = {
 };
 
 /**
+ * What the failed call was doing. A `permission-denied` on a write is the rules
+ * refusing *that document*, which is a content problem the merchant can fix; on
+ * a read it really is an access problem. They need different advice, and the
+ * SDK error alone cannot tell them apart.
+ */
+export type ErrorContext = 'read' | 'write';
+
+/** Why the rules turn down a merchant's document write, in the merchant's words. */
+const WRITE_REJECTED =
+  'GUGU did not accept this change. Usually that is contact details in the text ' +
+  '(a phone number, MoMo or WhatsApp), a value outside the allowed range, or a ' +
+  'field this dashboard does not control. Check the details and try again — ' +
+  'signing out will not help.';
+
+/**
  * The contract code a callable threw (e.g. `REAUTH_REQUIRED`). The web SDK
  * appends the HTTP status to the message, as in `REAUTH_REQUIRED [401]`.
  */
@@ -36,11 +51,16 @@ export function functionErrorCode(error: unknown): string | null {
   return match ? match[1] : null;
 }
 
-/** Turns SDK errors into sentences that say what happened and what to do. */
-export function describeError(error: unknown): string {
+/**
+ * Turns SDK errors into sentences that say what happened and what to do.
+ * Pass `'write'` when the call was saving something, so a rules rejection is
+ * reported as a rejected change rather than as a sign-in problem.
+ */
+export function describeError(error: unknown, context: ErrorContext = 'read'): string {
   const fnCode = functionErrorCode(error);
   if (fnCode && FUNCTION_CODES[fnCode]) return FUNCTION_CODES[fnCode];
   if (error instanceof FirebaseError) {
+    const service = error.code.split('/')[0];
     const code = error.code.replace(/^(auth|firestore|storage|functions)\//, '');
     switch (code) {
       case 'invalid-credential':
@@ -61,9 +81,17 @@ export function describeError(error: unknown): string {
       case 'network-request-failed':
       case 'unavailable':
         return 'Could not reach GUGU. Check your connection and try again.';
-      case 'permission-denied':
       case 'unauthorized':
-        return 'Your account is not allowed to do this. If your role changed recently, sign out and back in.';
+        // storage/unauthorized: the object rules turned the upload down.
+        return service === 'storage'
+          ? 'GUGU did not accept this file. Photos must be JPG, PNG or WebP and 5 MB or smaller.'
+          : WRITE_REJECTED;
+      case 'permission-denied':
+        // Only a read denial is really about who you are; a write denial is
+        // about what was being written, and signing out never fixes it.
+        return context === 'write'
+          ? WRITE_REJECTED
+          : 'Your account is not allowed to see this. If your role changed recently, sign out and back in.';
       case 'unauthenticated':
         return 'Your session has expired. Sign in again.';
       case 'not-found':

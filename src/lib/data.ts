@@ -18,6 +18,7 @@ import {
 import { httpsCallable } from 'firebase/functions';
 import { functionErrorCode } from './errors';
 import { firebase } from './firebase';
+import { isOrderStatus } from './orders';
 import type {
   Banner,
   Category,
@@ -25,6 +26,7 @@ import type {
   MerchantApplication,
   Order,
   OrderStatus,
+  OrderStatusValue,
   Product,
   Role,
   SubCategory,
@@ -36,6 +38,42 @@ type Snap = DocumentSnapshot<DocumentData>;
 const num = (v: unknown, fallback = 0) => (typeof v === 'number' && Number.isFinite(v) ? v : fallback);
 const str = (v: unknown) => (typeof v === 'string' ? v : undefined);
 const strList = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
+
+/**
+ * A stored status. Known values pass through; anything else (a legacy value, or
+ * one a newer backend writes) is kept verbatim as an `OrderStatusValue` so the
+ * UI can show it rather than index `STATUS_LABEL` with it and crash. Only a
+ * missing or non-string value falls back to `placed`.
+ */
+const status = (v: unknown): OrderStatusValue => {
+  if (isOrderStatus(v)) return v;
+  const raw = str(v)?.trim();
+  return raw ? raw : 'placed';
+};
+
+type HistoryEntry = NonNullable<Order['statusHistory']>[number];
+
+/** Keeps only well-formed history rows, each with a string status. */
+const toHistory = (v: unknown): HistoryEntry[] =>
+  Array.isArray(v)
+    ? v
+        .filter((e): e is Record<string, unknown> => Boolean(e) && typeof e === 'object' && !Array.isArray(e))
+        .map((e) => ({ ...e, status: status(e.status) }) as HistoryEntry)
+    : [];
+
+/** Per-merchant fulfilment, with every entry's status validated the same way. */
+const toFulfilment = (v: unknown): Order['fulfilment'] => {
+  if (!v || typeof v !== 'object' || Array.isArray(v)) return undefined;
+  const out: NonNullable<Order['fulfilment']> = {};
+  for (const [merchantId, entry] of Object.entries(v as Record<string, unknown>)) {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
+    const e = entry as Record<string, unknown>;
+    out[merchantId] = { ...e, status: status(e.status), history: toHistory(e.history) } as NonNullable<
+      Order['fulfilment']
+    >[string];
+  }
+  return out;
+};
 
 export function toProduct(snap: Snap): Product {
   const d = snap.data() ?? {};
@@ -63,7 +101,7 @@ export function toOrder(snap: Snap): Order {
     id: snap.id,
     userId: str(d.userId) ?? snap.ref.parent.parent?.id ?? '',
     orderNumber: str(d.orderNumber) ?? snap.id,
-    status: (str(d.status) ?? 'placed') as OrderStatus,
+    status: status(d.status),
     paymentMethod: (str(d.paymentMethod) ?? 'cash_on_delivery') as Order['paymentMethod'],
     paymentStatus: (str(d.paymentStatus) ?? 'unpaid') as Order['paymentStatus'],
     lines: Array.isArray(d.lines) ? d.lines : [],
@@ -73,7 +111,8 @@ export function toOrder(snap: Snap): Order {
     discount: num(d.discount),
     orderTotal: num(d.orderTotal),
     currency: 'GHS',
-    statusHistory: Array.isArray(d.statusHistory) ? d.statusHistory : [],
+    statusHistory: toHistory(d.statusHistory),
+    fulfilment: toFulfilment(d.fulfilment),
   };
 }
 
@@ -98,7 +137,14 @@ export function watchMerchantProducts(merchantId: string, next: Next<Product[]>,
   );
 }
 
-export function watchMerchantOrders(merchantId: string, next: Next<Order[]>, fail: Fail, max = 250) {
+/**
+ * Newest-first caps on the order feeds. Exported so the lists can say when they
+ * are truncated instead of quietly stopping at the cap.
+ */
+export const MERCHANT_ORDER_LIMIT = 250;
+export const ADMIN_ORDER_LIMIT = 300;
+
+export function watchMerchantOrders(merchantId: string, next: Next<Order[]>, fail: Fail, max = MERCHANT_ORDER_LIMIT) {
   const q = query(
     collectionGroup(firebase().db, 'orders'),
     where('merchantIds', 'array-contains', merchantId),
@@ -193,7 +239,7 @@ export function watchProductsByApproval(status: 'pending' | 'approved' | 'reject
   );
 }
 
-export function watchAllOrders(status: OrderStatus | 'all', next: Next<Order[]>, fail: Fail, max = 200) {
+export function watchAllOrders(status: OrderStatus | 'all', next: Next<Order[]>, fail: Fail, max = ADMIN_ORDER_LIMIT) {
   const constraints: QueryConstraint[] = [];
   if (status !== 'all') constraints.push(where('status', '==', status));
   constraints.push(orderBy('createdAt', 'desc'), limit(max));

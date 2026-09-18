@@ -9,16 +9,16 @@ import { PageHeader, Panel } from '@/components/ui/panel';
 import { EmptyState, ErrorState, ListSkeleton, Skeleton } from '@/components/ui/states';
 import { useMerchantId } from '@/lib/auth';
 import { cn } from '@/lib/cn';
-import { watchMerchantOrders, watchMerchantProducts } from '@/lib/data';
+import { MERCHANT_ORDER_LIMIT, watchMerchantOrders, watchMerchantProducts } from '@/lib/data';
 import { formatCount, formatMoney } from '@/lib/format';
-import { ORDER_STATUSES, STATUS_LABEL, isRevenue, linesFor, linesTotal, statusFor } from '@/lib/orders';
-import type { Order, OrderStatus, Product } from '@/lib/types';
+import { ORDER_STATUSES, isOrderStatus, isRevenue, linesFor, linesTotal, statusFor, statusLabel } from '@/lib/orders';
+import type { Order, OrderStatusValue, Product } from '@/lib/types';
 import { useLive } from '@/lib/use-data';
 import { OrderRows } from '../orders/order-rows';
 
 export const LOW_STOCK = 5;
 
-const statusColor: Record<OrderStatus, string> = {
+const statusColor: Record<string, string> = {
   awaiting_payment: 'bg-thread-300',
   placed: 'bg-brand-900',
   processing: 'bg-brand-700',
@@ -26,6 +26,7 @@ const statusColor: Record<OrderStatus, string> = {
   delivered: 'bg-ok-700',
   cancelled: 'bg-line-strong',
   payment_failed: 'bg-bad-700',
+  other: 'bg-line-strong',
 };
 
 function Kpis({ orders, products }: { orders: Order[] | null; products: Product[] | null }) {
@@ -39,8 +40,16 @@ function Kpis({ orders, products }: { orders: Order[] | null; products: Product[
   const pending = products ? products.filter((p) => p.approvalStatus === 'pending').length : null;
   const live = products ? products.filter((p) => p.isActive && p.approvalStatus === 'approved').length : null;
 
+  // The feed is capped, so past the cap "Earned" stops growing. Say so rather than
+  // letting the figure look like the whole story.
+  const capped = orders !== null && orders.length >= MERCHANT_ORDER_LIMIT;
+
   const cells: { label: string; value: string | null; note: string; href?: string }[] = [
-    { label: 'Earned', value: revenue === null ? null : formatMoney(revenue), note: 'Your delivered items' },
+    {
+      label: 'Earned',
+      value: revenue === null ? null : formatMoney(revenue),
+      note: capped ? `Your delivered items, latest ${MERCHANT_ORDER_LIMIT} orders` : 'Your delivered items',
+    },
     {
       label: 'To fulfil',
       value: toFulfil === null ? null : formatCount(toFulfil),
@@ -87,26 +96,34 @@ function Kpis({ orders, products }: { orders: Order[] | null; products: Product[
 }
 
 function StatusBreakdown({ orders, merchantId }: { orders: Order[]; merchantId: string }) {
-  const counts = ORDER_STATUSES.map((s) => ({
-    status: s,
-    count: orders.filter((o) => statusFor(o, merchantId) === s).length,
-  })).filter(
-    (c) => c.count > 0
-  );
+  // Statuses this build does not know still have to add up, or the bar and the
+  // numbers would silently disagree with the order list.
+  const other = orders.filter((o) => !isOrderStatus(statusFor(o, merchantId))).length;
+  const counts: { status: OrderStatusValue; count: number }[] = [
+    ...ORDER_STATUSES.map((s) => ({
+      status: s as OrderStatusValue,
+      count: orders.filter((o) => statusFor(o, merchantId) === s).length,
+    })),
+    { status: 'other', count: other },
+  ].filter((c) => c.count > 0);
   const total = orders.length;
   return (
     <div className="px-4 py-4 sm:px-5">
       <div className="flex h-3 overflow-hidden rounded-[3px] bg-line" aria-hidden>
         {counts.map((c) => (
-          <span key={c.status} className={cn('h-full', statusColor[c.status])} style={{ width: `${(c.count / total) * 100}%` }} />
+          <span
+            key={c.status}
+            className={cn('h-full', statusColor[c.status] ?? statusColor.other)}
+            style={{ width: `${(c.count / total) * 100}%` }}
+          />
         ))}
       </div>
       <ul className="mt-4 grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
         {counts.map((c) => (
           <li key={c.status} className="flex items-center justify-between gap-3 text-[0.9375rem]">
             <span className="flex items-center gap-2">
-              <span aria-hidden className={cn('size-2.5 rounded-[2px]', statusColor[c.status])} />
-              {STATUS_LABEL[c.status]}
+              <span aria-hidden className={cn('size-2.5 rounded-[2px]', statusColor[c.status] ?? statusColor.other)} />
+              {c.status === 'other' ? 'Other' : statusLabel(c.status)}
             </span>
             <span className="font-semibold tabular">{formatCount(c.count)}</span>
           </li>

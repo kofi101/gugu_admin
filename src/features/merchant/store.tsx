@@ -69,7 +69,7 @@ function StoreForm({ merchant }: { merchant: Merchant }) {
       reset(values);
       toast.success('Store profile saved.');
     } catch (error) {
-      const message = describeError(error);
+      const message = describeError(error, 'write');
       setSaveError(message);
       toast.error(`Store profile not saved. ${message}`, { duration: 7000 });
     } finally {

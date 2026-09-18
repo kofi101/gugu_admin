@@ -32,10 +32,36 @@ export const PRODUCT_LIMITS = {
   stockMax: 100_000,
   textMax: 2000,
   listMax: 20,
+  /** The contract lowered related products from 20 to 10. */
+  relatedMax: 10,
 } as const;
 
 /** Same pattern as the product rules' noContactInfo(): no off-platform contact or payment details. */
 const CONTACT_INFO = /(momo|mobile money|whatsapp|[0-9+][0-9 ()+-]{8,}[0-9])/s;
+
+const CONTACT_MESSAGE =
+  'Remove phone numbers, MoMo, mobile money or WhatsApp details. Customers pay and contact you through GUGU.';
+
+const hasContactInfo = (v: string | undefined) => Boolean(v) && CONTACT_INFO.test(v!.toLowerCase());
+
+/**
+ * Why the product rules would refuse a write to this product, in the merchant's
+ * words. The rules validate the *merged* document, so a value already stored —
+ * even in a field this form used not to show — refuses every later write,
+ * including the Hide/Show toggle that never touches it. Each blocker here is
+ * something this form can now fix.
+ */
+export function productWriteBlockers(p: Product): string[] {
+  const out: string[] = [];
+  if (hasContactInfo(p.returnPolicy)) out.push('its return policy has contact details in it');
+  if (hasContactInfo(p.supportNote)) out.push('its support note has contact details in it');
+  if ((p.returnPolicy?.length ?? 0) > PRODUCT_LIMITS.textMax) out.push('its return policy is too long');
+  if ((p.supportNote?.length ?? 0) > PRODUCT_LIMITS.textMax) out.push('its support note is too long');
+  if ((p.relatedProductIds?.length ?? 0) > PRODUCT_LIMITS.relatedMax) {
+    out.push(`it links to ${p.relatedProductIds!.length} related products and GUGU now allows ${PRODUCT_LIMITS.relatedMax}`);
+  }
+  return out;
+}
 
 const MONEY = /^\d{1,8}(\.\d{1,2})?$/;
 const highlightCount = (v: string) => v.split('\n').filter((l) => l.trim()).length;
@@ -74,10 +100,12 @@ const schema = z
       .string()
       .trim()
       .max(PRODUCT_LIMITS.textMax, 'Keep this to 2,000 characters or fewer.')
-      .refine(
-        (v) => !CONTACT_INFO.test(v.toLowerCase()),
-        'Remove phone numbers, MoMo, mobile money or WhatsApp details. Customers pay and contact you through GUGU.'
-      ),
+      .refine((v) => !CONTACT_INFO.test(v.toLowerCase()), CONTACT_MESSAGE),
+    supportNote: z
+      .string()
+      .trim()
+      .max(PRODUCT_LIMITS.textMax, 'Keep this to 2,000 characters or fewer.')
+      .refine((v) => !CONTACT_INFO.test(v.toLowerCase()), CONTACT_MESSAGE),
   })
   .superRefine((v, ctx) => {
     // discountPrice: empty or 0 means no sale; otherwise 0.01 <= sale < price.
@@ -103,6 +131,7 @@ function defaults(p?: Product): Values {
     stockQuantity: typeof p?.stockQuantity === 'number' ? String(p.stockQuantity) : '',
     highlights: (p?.highlights ?? []).join('\n'),
     returnPolicy: p?.returnPolicy ?? '',
+    supportNote: p?.supportNote ?? '',
   };
 }
 
@@ -172,6 +201,8 @@ export function ProductForm({ product }: { product?: Product }) {
     [subcategories, categoryId]
   );
 
+  const overRelated = (product?.relatedProductIds?.length ?? 0) > PRODUCT_LIMITS.relatedMax;
+
   const imagesChanged =
     images.some((i) => i.kind === 'new') ||
     images.map((i) => (i.kind === 'existing' ? i.url : '')).join('|') !== (product?.imageUrls ?? []).join('|');
@@ -201,6 +232,10 @@ export function ProductForm({ product }: { product?: Product }) {
         currency: 'GHS',
         stockQuantity: Number(values.stockQuantity),
         returnPolicy: values.returnPolicy,
+        supportNote: values.supportNote,
+        // The rules check the merged document, so an over-cap list this form does
+        // not otherwise touch would refuse the save. Trim it in the same write.
+        ...(overRelated ? { relatedProductIds: product!.relatedProductIds!.slice(0, PRODUCT_LIMITS.relatedMax) } : {}),
         updatedAt: serverTimestamp(),
       };
       // Content edits (and new products) must go back to review, off the shelf, in the same write.
@@ -224,7 +259,7 @@ export function ProductForm({ product }: { product?: Product }) {
       );
       router.push(needsReview ? '/merchant/products?filter=pending' : '/merchant/products');
     } catch (error) {
-      const message = describeError(error);
+      const message = describeError(error, 'write');
       setSaveError(message);
       toast.error(editing ? `Changes not saved. ${message}` : `Product not added. ${message}`, { duration: 7000 });
     } finally {
@@ -232,6 +267,7 @@ export function ProductForm({ product }: { product?: Product }) {
     }
   };
 
+  const blockers = product ? productWriteBlockers(product) : [];
   const catalogError = categories.status === 'error' ? categories : subcategories.status === 'error' ? subcategories : null;
   const salePreview = MONEY.test(price) && MONEY.test(discount) && Number(discount) < Number(price) ? Number(discount) : null;
 
@@ -244,6 +280,22 @@ export function ProductForm({ product }: { product?: Product }) {
       noValidate
       className="flex flex-col gap-6"
     >
+      {product && blockers.length ? (
+        <div
+          role="alert"
+          className="flex items-start gap-3 rounded-[var(--radius-panel)] border border-bad-700/25 bg-bad-50 px-4 py-3 text-[0.9375rem] text-bad-700"
+        >
+          <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
+          <p>
+            <strong className="font-semibold">GUGU will refuse any change to this product until it is fixed</strong>{' '}
+            because {blockers.join(', and ')}. That includes hiding or showing it. Fix the fields below and save —{' '}
+            {overRelated
+              ? `saving keeps the first ${PRODUCT_LIMITS.relatedMax} related products and drops the rest.`
+              : 'that clears it.'}
+          </p>
+        </div>
+      ) : null}
+
       {product ? (
         <div className="flex items-start gap-3 rounded-[var(--radius-panel)] border border-thread-300 bg-thread-50 px-4 py-3 text-[0.9375rem] text-thread-800">
           <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
@@ -364,6 +416,13 @@ export function ProductForm({ product }: { product?: Product }) {
         <Field label="Return policy" hint="For example: Returns accepted within 7 days if unused." error={errors.returnPolicy?.message}>
           {(p) => <Input {...p} {...register('returnPolicy')} />}
         </Field>
+        <Field
+          label="Support note"
+          hint="Shown to shoppers who need help with this product. No phone numbers, MoMo or WhatsApp — GUGU handles contact."
+          error={errors.supportNote?.message}
+        >
+          {(p) => <Textarea {...p} rows={3} {...register('supportNote')} />}
+        </Field>
       </Panel>
 
       {saveError ? (
@@ -376,7 +435,8 @@ export function ProductForm({ product }: { product?: Product }) {
         <ButtonLink href="/merchant/products" variant="secondary">
           Cancel
         </ButtonLink>
-        <Button type="submit" loading={saving} disabled={editing && !isDirty && !imagesChanged}>
+        {/* An over-cap related-products list is fixed by saving, with nothing to type first. */}
+        <Button type="submit" loading={saving} disabled={editing && !isDirty && !imagesChanged && !overRelated}>
           {saving ? 'Saving…' : !editing ? 'Add product' : willReview ? 'Save and send for approval' : 'Save changes'}
         </Button>
       </div>

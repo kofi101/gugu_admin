@@ -1,14 +1,15 @@
 import { Check } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { FULFILMENT_STEPS, STATUS_LABEL } from '@/lib/orders';
-import type { OrderStatus } from '@/lib/types';
+import { FULFILMENT_STEPS, STATUS_LABEL, statusLabel } from '@/lib/orders';
+import type { OrderStatusValue } from '@/lib/types';
 
 /**
  * Fulfilment progress as a woven strip: each finished step is a filled band,
  * the current one carries the gold weft.
  */
-export function StatusStrip({ status, ownPart }: { status: OrderStatus; ownPart?: boolean }) {
-  const index = FULFILMENT_STEPS.indexOf(status);
+export function StatusStrip({ status, ownPart }: { status: OrderStatusValue; ownPart?: boolean }) {
+  // -1 for anything off the fulfilment path, including a status this build does not know.
+  const index = (FULFILMENT_STEPS as string[]).indexOf(status);
   const offPath = index === -1;
   return (
     <div>
@@ -48,7 +49,7 @@ export function StatusStrip({ status, ownPart }: { status: OrderStatus; ownPart?
       {offPath ? (
         <p className="mt-3 text-sm text-ink-muted">
           {ownPart ? 'Your part of this order is' : 'This order is'}{' '}
-          <strong className="font-semibold text-ink">{STATUS_LABEL[status].toLowerCase()}</strong> and is not in fulfilment.
+          <strong className="font-semibold text-ink">{statusLabel(status).toLowerCase()}</strong> and is not in fulfilment.
         </p>
       ) : null}
     </div>
