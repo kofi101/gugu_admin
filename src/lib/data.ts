@@ -40,16 +40,18 @@ const str = (v: unknown) => (typeof v === 'string' ? v : undefined);
 const strList = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
 
 /**
- * A stored status. Known values pass through; anything else (a legacy value, or
- * one a newer backend writes) is kept verbatim as an `OrderStatusValue` so the
- * UI can show it rather than index `STATUS_LABEL` with it and crash. Only a
- * missing or non-string value falls back to `placed`.
+ * A stored status, or `undefined` when the field is missing or is not a usable
+ * string. Known values pass through; anything else (a legacy value, or one a
+ * newer backend writes) is kept verbatim as an `OrderStatusValue` so the UI can
+ * show it rather than index `STATUS_LABEL` with it and crash.
  */
-const status = (v: unknown): OrderStatusValue => {
+const statusOrNone = (v: unknown): OrderStatusValue | undefined => {
   if (isOrderStatus(v)) return v;
-  const raw = str(v)?.trim();
-  return raw ? raw : 'placed';
+  return str(v)?.trim() || undefined;
 };
+
+/** As `statusOrNone`, for the order's own status, which every order has. */
+const status = (v: unknown): OrderStatusValue => statusOrNone(v) ?? 'placed';
 
 type HistoryEntry = NonNullable<Order['statusHistory']>[number];
 
@@ -61,14 +63,18 @@ const toHistory = (v: unknown): HistoryEntry[] =>
         .map((e) => ({ ...e, status: status(e.status) }) as HistoryEntry)
     : [];
 
-/** Per-merchant fulfilment, with every entry's status validated the same way. */
+/**
+ * Per-merchant fulfilment, with every entry's status validated the same way.
+ * An entry with no usable status keeps none: coercing it to `placed` would make
+ * the dashboard offer "Start processing" for a seller who never started.
+ */
 const toFulfilment = (v: unknown): Order['fulfilment'] => {
   if (!v || typeof v !== 'object' || Array.isArray(v)) return undefined;
   const out: NonNullable<Order['fulfilment']> = {};
   for (const [merchantId, entry] of Object.entries(v as Record<string, unknown>)) {
     if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
     const e = entry as Record<string, unknown>;
-    out[merchantId] = { ...e, status: status(e.status), history: toHistory(e.history) } as NonNullable<
+    out[merchantId] = { ...e, status: statusOrNone(e.status), history: toHistory(e.history) } as NonNullable<
       Order['fulfilment']
     >[string];
   }
@@ -79,6 +85,11 @@ export function toProduct(snap: Snap): Product {
   const d = snap.data() ?? {};
   return {
     ...(d as Partial<Product>),
+    // The stored document as Firestore returned it. The product rules validate
+    // the *merged* document, so `productWriteBlockers()` has to read what is
+    // really stored, not the cleaned-up copy below. Parse-time only: nothing
+    // writes a Product back, so this never reaches Firestore.
+    stored: d as Record<string, unknown>,
     id: snap.id,
     merchantId: str(d.merchantId) ?? '',
     categoryId: str(d.categoryId) ?? '',
@@ -91,6 +102,11 @@ export function toProduct(snap: Snap): Product {
     isActive: d.isActive === true,
     stockQuantity: typeof d.stockQuantity === 'number' ? d.stockQuantity : undefined,
     highlights: strList(d.highlights),
+    // Sanitised like the fields above: a stored non-string here used to reach
+    // `v.toLowerCase()` in the write-blocker check and throw during render.
+    returnPolicy: str(d.returnPolicy),
+    supportNote: str(d.supportNote),
+    relatedProductIds: strList(d.relatedProductIds),
   };
 }
 

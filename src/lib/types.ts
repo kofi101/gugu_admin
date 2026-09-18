@@ -67,7 +67,12 @@ export type Order = {
   fulfilment?: Record<
     string,
     {
-      status: OrderStatusValue;
+      /**
+       * Absent when the stored entry carries no usable status. That is not the
+       * same as `placed`: nothing has been recorded for this seller, so the
+       * dashboard offers no next step for it.
+       */
+      status?: OrderStatusValue;
       deliveredAt?: Timestamp;
       history?: { status: OrderStatusValue; at?: Timestamp; by?: string }[];
     }
@@ -114,6 +119,13 @@ export type Product = {
   reviewNote?: string;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
+  /**
+   * The document exactly as Firestore stored it, set by `toProduct`. The fields
+   * above are sanitised for rendering, but the product rules validate the merged
+   * *stored* document, so the write-blocker check reads this. Parse-time only:
+   * it is never written back.
+   */
+  stored?: Record<string, unknown>;
 };
 
 export type Merchant = {

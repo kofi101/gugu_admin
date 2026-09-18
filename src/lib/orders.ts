@@ -60,18 +60,18 @@ export const ADMIN_CANCELLABLE: OrderStatus[] = ['awaiting_payment', 'placed', '
 
 const FULFILLING: OrderStatus[] = ['placed', 'processing', 'shipped'];
 
-/** The order as a whole is being fulfilled (an unknown status never is). */
-export function isFulfilling(status: OrderStatusValue): boolean {
-  return (FULFILLING as string[]).includes(status);
+/** The order as a whole is being fulfilled (an unknown or missing status never is). */
+export function isFulfilling(status: OrderStatusValue | undefined): boolean {
+  return typeof status === 'string' && (FULFILLING as string[]).includes(status);
 }
 
-/** The step this status may move to, or null. Unknown values never move. */
-export function nextStatus(status: OrderStatusValue): OrderStatus | null {
+/** The step this status may move to, or null. Unknown and missing values never move. */
+export function nextStatus(status: OrderStatusValue | undefined): OrderStatus | null {
   return isOrderStatus(status) ? (NEXT_STATUS[status] ?? null) : null;
 }
 
 /** Button text for `nextStatus`, or null when there is no next step. */
-export function nextActionLabel(status: OrderStatusValue): string | null {
+export function nextActionLabel(status: OrderStatusValue | undefined): string | null {
   return isOrderStatus(status) ? (NEXT_ACTION_LABEL[status] ?? null) : null;
 }
 
@@ -84,11 +84,16 @@ export function adminCanCancel(order: Order): boolean {
  * The status a merchant sees: its own `fulfilment[merchantId]` entry while the
  * order is in fulfilment or delivered, otherwise the order status (awaiting
  * payment, cancelled, payment failed).
+ *
+ * `undefined` when this merchant *has* a fulfilment entry but it records no
+ * status. Falling back to the order status there would invent progress the
+ * stored document never claimed.
  */
-export function statusFor(order: Order, merchantId: string | null): OrderStatusValue {
+export function statusFor(order: Order, merchantId: string | null): OrderStatusValue | undefined {
   if (!merchantId) return order.status;
   if (!isFulfilling(order.status) && order.status !== 'delivered') return order.status;
-  return order.fulfilment?.[merchantId]?.status ?? order.status;
+  const entry = order.fulfilment?.[merchantId];
+  return entry ? entry.status : order.status;
 }
 
 /** Next step this viewer may request, or null. Only offered while the order is in fulfilment. */

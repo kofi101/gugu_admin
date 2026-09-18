@@ -35,7 +35,7 @@ function Kpis({ orders, products }: { orders: Order[] | null; products: Product[
     ? orders.filter((o) => isRevenue(o, merchantId)).reduce((sum, o) => sum + linesTotal(linesFor(o, merchantId)), 0)
     : null;
   const toFulfil = orders
-    ? orders.filter((o) => ['placed', 'processing'].includes(statusFor(o, merchantId))).length
+    ? orders.filter((o) => ['placed', 'processing'].includes(statusFor(o, merchantId) ?? '')).length
     : null;
   const pending = products ? products.filter((p) => p.approvalStatus === 'pending').length : null;
   const live = products ? products.filter((p) => p.isActive && p.approvalStatus === 'approved').length : null;

@@ -193,7 +193,7 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
             Its stock was returned. Other sellers&apos; delivered items were kept.
           </p>
         ) : null}
-        {merchantId && order.merchantIds.length > 1 && shown !== order.status && shown !== 'cancelled' ? (
+        {merchantId && order.merchantIds.length > 1 && shown && shown !== order.status && shown !== 'cancelled' ? (
           <p className="mt-3 text-sm text-ink-muted">
             Your part is {statusLabel(shown).toLowerCase()}. The whole order shows as{' '}
             {statusLabel(order.status).toLowerCase()} until every seller catches up.
@@ -202,7 +202,9 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
         {fulfilmentEntries.length > 1 || order.cancelledMerchantIds?.length ? (
           <ul className="mt-4 grid gap-1.5 text-[0.9375rem] sm:grid-cols-2" aria-label="Fulfilment by seller">
             {fulfilmentEntries.map(([m, e]) => {
-              const step = isFulfilling(order.status) ? nextStatus(e.status) : null;
+              // No stored status for this seller: nothing to advance from.
+              const from = e.status;
+              const step = isFulfilling(order.status) ? nextStatus(from) : null;
               return (
               <li key={m} className="flex items-center justify-between gap-3 rounded-md bg-ground px-3 py-1.5">
                 <span className="min-w-0">
@@ -213,13 +215,13 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
                 </span>
                 <span className="flex items-center gap-2">
                   <StatusBadge status={e.status} label={statusLabel(e.status)} />
-                  {step ? (
+                  {step && from ? (
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setSellerStep({ merchantId: m, from: e.status, to: step })}
+                      onClick={() => setSellerStep({ merchantId: m, from, to: step })}
                     >
-                      {nextActionLabel(e.status)}
+                      {nextActionLabel(from)}
                       <span className="sr-only"> for {m}</span>
                     </Button>
                   ) : null}

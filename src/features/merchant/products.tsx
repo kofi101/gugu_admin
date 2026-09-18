@@ -20,7 +20,7 @@ import { mutate } from '@/lib/notify';
 import type { Product } from '@/lib/types';
 import { useLive } from '@/lib/use-data';
 import { LOW_STOCK } from './overview';
-import { ProductForm, productWriteBlockers } from './product-form';
+import { ProductForm, blockerReasons, productWriteBlockers } from './product-form';
 
 type Filter = 'all' | 'live' | 'pending' | 'rejected' | 'hidden';
 
@@ -64,8 +64,12 @@ export function MerchantProducts() {
     // rejection come back as a vague permission error.
     const blockers = productWriteBlockers(p);
     if (blockers.length) {
+      // Only point at Edit for what saving there actually repairs.
+      const next = blockers.some((b) => b.fixable)
+        ? 'Open Edit to fix it.'
+        : 'This dashboard cannot fix it — contact GUGU support.';
       toast.error(
-        `${p.name} cannot be ${p.isActive ? 'hidden' : 'shown'} because ${blockers.join(', and ')}. Open Edit to fix it.`,
+        `${p.name} cannot be ${p.isActive ? 'hidden' : 'shown'} because ${blockerReasons(blockers)}. ${next}`,
         { duration: 9000 }
       );
       return;
@@ -74,7 +78,11 @@ export function MerchantProducts() {
     try {
       await mutate(
         () => updateDoc(doc(firebase().db, 'products', p.id), { isActive: !p.isActive, updatedAt: serverTimestamp() }),
-        { success: p.isActive ? `${p.name} is hidden from shoppers.` : `${p.name} is visible to shoppers.`, error: 'Visibility not changed.' }
+        {
+          success: p.isActive ? `${p.name} is hidden from shoppers.` : `${p.name} is visible to shoppers.`,
+          error: 'Visibility not changed.',
+          context: 'write',
+        }
       );
     } catch {
       /* toast shown */
@@ -215,6 +223,7 @@ export function MerchantProducts() {
           await mutate(() => deleteDoc(doc(firebase().db, 'products', p.id)), {
             success: `${p.name} deleted.`,
             error: 'Product not deleted.',
+            context: 'write',
           });
         }}
       />

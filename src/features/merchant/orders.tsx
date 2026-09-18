@@ -15,7 +15,9 @@ import { OrderRows } from '../orders/order-rows';
 
 type Filter = 'open' | 'placed' | 'processing' | 'shipped' | 'delivered' | 'closed' | 'all';
 
-const matches: Record<Filter, (s: OrderStatusValue) => boolean> = {
+// A seller's fulfilment entry may record no status at all, which matches no
+// status filter but still shows under "All".
+const matches: Record<Filter, (s: OrderStatusValue | undefined) => boolean> = {
   open: (s) => s === 'placed' || s === 'processing' || s === 'shipped' || s === 'awaiting_payment',
   placed: (s) => s === 'placed',
   processing: (s) => s === 'processing',

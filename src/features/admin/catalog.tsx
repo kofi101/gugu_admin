@@ -96,7 +96,11 @@ function NameDialog({ editing, onClose }: { editing: Editing; onClose: () => voi
             await setDoc(doc(db, 'subcategories', id), { id, categoryId: editing.categoryId, name: v.name });
           }
         },
-        { success: editing.item ? `${label} renamed to ${v.name}.` : `${label} ${v.name} added.`, error: `${label} not saved.` }
+        {
+          success: editing.item ? `${label} renamed to ${v.name}.` : `${label} ${v.name} added.`,
+          error: `${label} not saved.`,
+          context: 'write',
+        }
       );
       onClose();
     } catch {
@@ -292,6 +296,7 @@ export function Catalog() {
           await mutate(() => deleteDoc(doc(db, toDelete.kind, toDelete.id)), {
             success: `${toDelete.name} deleted.`,
             error: 'Not deleted.',
+            context: 'write',
           });
           if (toDelete.id === selected) setSelected(null);
         }}

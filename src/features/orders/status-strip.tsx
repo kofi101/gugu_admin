@@ -7,9 +7,10 @@ import type { OrderStatusValue } from '@/lib/types';
  * Fulfilment progress as a woven strip: each finished step is a filled band,
  * the current one carries the gold weft.
  */
-export function StatusStrip({ status, ownPart }: { status: OrderStatusValue; ownPart?: boolean }) {
-  // -1 for anything off the fulfilment path, including a status this build does not know.
-  const index = (FULFILMENT_STEPS as string[]).indexOf(status);
+export function StatusStrip({ status, ownPart }: { status: OrderStatusValue | undefined; ownPart?: boolean }) {
+  // -1 for anything off the fulfilment path, including a status this build does
+  // not know and an entry that records no status at all.
+  const index = status ? (FULFILMENT_STEPS as string[]).indexOf(status) : -1;
   const offPath = index === -1;
   return (
     <div>
@@ -48,8 +49,19 @@ export function StatusStrip({ status, ownPart }: { status: OrderStatusValue; own
       </ol>
       {offPath ? (
         <p className="mt-3 text-sm text-ink-muted">
-          {ownPart ? 'Your part of this order is' : 'This order is'}{' '}
-          <strong className="font-semibold text-ink">{statusLabel(status).toLowerCase()}</strong> and is not in fulfilment.
+          {status ? (
+            <>
+              {ownPart ? 'Your part of this order is' : 'This order is'}{' '}
+              <strong className="font-semibold text-ink">{statusLabel(status).toLowerCase()}</strong> and is not in
+              fulfilment.
+            </>
+          ) : (
+            <>
+              {ownPart ? 'Your part of this order has' : 'This order has'}{' '}
+              <strong className="font-semibold text-ink">no recorded status</strong>, so there is no next step to take.
+              Contact GUGU support if it should be moving.
+            </>
+          )}
         </p>
       ) : null}
     </div>
