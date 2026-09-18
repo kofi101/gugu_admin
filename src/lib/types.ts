@@ -183,6 +183,47 @@ export type MerchantApplication = {
   reviewedAt?: Timestamp;
 };
 
+/**
+ * One recorded decision from `merchant_applications/{uid}/reviews`, appended by
+ * `reviewMerchantApplication` inside the decision's own transaction (gugu_2.0
+ * `functions/src/admin.js`). Admin-read, no client writes — not even the
+ * applicant's — so it is the one record a re-application cannot erase.
+ *
+ * Every field is optional for the same reason an order's stored status is: these
+ * documents are written by a Function this build does not ship, and a row that
+ * is missing a field, or holds something other than what is described here, must
+ * still render as what it does record rather than crash the reviewer's page.
+ */
+export type MerchantApplicationReview = {
+  id: string;
+  /**
+   * The verb the admin used: `approve` or `reject`. Kept verbatim when it is
+   * neither, the way `OrderStatusValue` keeps an unknown order status, so a
+   * decision a newer backend records is shown rather than mislabelled.
+   */
+  decision?: string;
+  note?: string | null;
+  /** The deciding admin's uid. There is no display name in this document. */
+  reviewedBy?: string;
+  reviewedAt?: Timestamp;
+  /** Set on an approve: the store that decision created. */
+  merchantId?: string;
+  /**
+   * The application as it stood when the decision was made — which is NOT
+   * necessarily the application stored now. A re-application replaces the
+   * document, so `submission.businessName` may differ from the current one.
+   */
+  submission?: {
+    businessName?: string;
+    phone?: string;
+    email?: string;
+    regionId?: string;
+    cityId?: string;
+    documentUrls?: string[];
+    submittedAt?: Timestamp;
+  };
+};
+
 export type Category = { id: string; name: string; sortOrder?: number | null };
 export type SubCategory = { id: string; categoryId: string; name: string };
 

@@ -62,3 +62,18 @@ export function applicationStatusLabel(status: string | null | undefined): strin
 export function canReview(status: string | null | undefined): boolean {
   return status === 'pending';
 }
+
+/**
+ * The status word a recorded decision amounts to.
+ *
+ * `merchant_applications/{uid}/reviews` stores the verb the admin used
+ * (`approve` / `reject`); staff read outcomes, in the same words the badge on a
+ * decided application uses. Anything else is passed through for
+ * `applicationStatusLabel` to echo rather than guessed at — the one thing a
+ * KYC trail must never do is describe a decision as the opposite one.
+ */
+export function reviewDecisionStatus(decision: string | null | undefined): string {
+  if (decision === 'approve') return 'approved';
+  if (decision === 'reject') return 'rejected';
+  return typeof decision === 'string' && decision.trim() ? decision.trim() : 'unknown';
+}

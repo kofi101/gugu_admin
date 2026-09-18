@@ -1,7 +1,7 @@
 'use client';
 
 import { getDownloadURL, ref } from 'firebase/storage';
-import { Check, FileText, X } from 'lucide-react';
+import { AlertTriangle, Check, FileText, RotateCw, X } from 'lucide-react';
 import { useState } from 'react';
 import { StatusBadge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,14 +15,20 @@ import {
   APPLICATION_STATUSES,
   applicationStatusLabel,
   canReview,
+  reviewDecisionStatus,
 } from '@/lib/applications';
-import { reviewMerchantApplication, watchApplications } from '@/lib/data';
+import {
+  APPLICATION_REVIEW_LIMIT,
+  listApplicationReviews,
+  reviewMerchantApplication,
+  watchApplications,
+} from '@/lib/data';
 import { describeError } from '@/lib/errors';
 import { firebase } from '@/lib/firebase';
-import { formatDate, titleize } from '@/lib/format';
+import { formatDate, formatDateTime, titleize, toDate } from '@/lib/format';
 import { mutate } from '@/lib/notify';
-import type { MerchantApplication } from '@/lib/types';
-import { useLive } from '@/lib/use-data';
+import type { MerchantApplication, MerchantApplicationReview } from '@/lib/types';
+import { useAsync, useLive } from '@/lib/use-data';
 
 type Status = MerchantApplication['status'];
 
@@ -73,6 +79,128 @@ function DocumentLink({ value, index }: { value: string; index: number }) {
       </button>
       {error ? <span className="text-sm text-bad-700">{error}</span> : null}
     </span>
+  );
+}
+
+/** What the applicant sent at the time of one past decision, in one line. */
+function SubmittedThen({ review, current }: { review: MerchantApplicationReview; current: MerchantApplication }) {
+  const sub = review.submission ?? {};
+  const name = sub.businessName?.trim();
+  const sentAt = toDate(sub.submittedAt);
+  const where = [titleize(sub.cityId), titleize(sub.regionId)].filter(Boolean).join(', ');
+  const contact = [sub.email, sub.phone, where].filter(Boolean).join(' · ');
+  // The whole point of keeping the submission with the decision: a re-applicant
+  // may have changed the business name, and the reviewer reading a fresh
+  // `pending` application has no other way to see that this rejection was about
+  // the same person.
+  const renamed = Boolean(name) && Boolean(current.businessName) && name !== current.businessName;
+  const docs = sub.documentUrls ?? [];
+
+  return (
+    <div className="mt-2 text-sm text-ink-muted">
+      <p>
+        {sentAt ? `Sent ${formatDate(sentAt)} as ` : 'Sent as '}
+        <span className="font-medium text-ink">{name || 'Unnamed business'}</span>
+        {contact ? ` — ${contact}` : null}
+      </p>
+      {renamed ? (
+        <p className="mt-0.5">
+          This application is under a different name:{' '}
+          <span className="font-medium text-ink">{current.businessName}</span>.
+        </p>
+      ) : null}
+      {docs.length ? (
+        <span className="mt-0.5 flex flex-wrap items-center gap-x-4">
+          <span>Documents sent then:</span>
+          {docs.map((d, i) => (
+            <DocumentLink key={d} value={d} index={i} />
+          ))}
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Every decision GUGU has recorded about this applicant.
+ *
+ * An applicant may overwrite a rejected application with a fresh one, and the
+ * replace carries away the note, the reviewer and the date — so without this a
+ * second reviewer sees a spotless `pending` application with no sign the person
+ * was turned down before, or why. The rows come from a subcollection the
+ * applicant cannot write (gugu_2.0 `firestore.rules`).
+ *
+ * Nothing is rendered for a first-time applicant, which is most of them; the
+ * reviewer only sees this block when there is something to know.
+ */
+function DecisionHistory({ app }: { app: MerchantApplication }) {
+  const result = useAsync<MerchantApplicationReview[]>(`application-reviews:${app.uid}`, () =>
+    listApplicationReviews(app.uid)
+  );
+
+  // Silent while it loads: a spinner on every row would be the clutter this
+  // block exists to avoid, and there is nothing to say yet.
+  if (result.status === 'loading') return null;
+  if (result.status === 'error') {
+    // Said out loud rather than swallowed. An empty block and a failed read look
+    // identical on screen, and reading "no history" into a read the rules just
+    // refused is exactly the mistake this feature exists to prevent.
+    return (
+      <div role="alert" className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line pt-4 text-sm">
+        <span className="flex items-center gap-1.5 font-semibold text-bad-700">
+          <AlertTriangle className="size-4" aria-hidden />
+          Earlier decisions could not be loaded
+        </span>
+        <span className="text-ink-muted">{describeError(result.error)}</span>
+        <Button variant="ghost" size="sm" icon={<RotateCw aria-hidden />} onClick={result.retry}>
+          Try again
+        </Button>
+      </div>
+    );
+  }
+
+  const reviews = result.data;
+  if (reviews.length === 0) return null;
+
+  return (
+    <div className="mt-4 border-t border-line pt-4">
+      <h3 className="text-sm font-semibold text-ink">
+        Decision history
+        <span className="ml-2 font-normal text-ink-muted">
+          {reviews.length === 1 ? 'One decision' : `${reviews.length} decisions`} recorded for this account
+          {/* On a pending application every recorded decision is about an
+              earlier submission, which is the fact the reviewer is here for. */}
+          {canReview(app.status) ? ', all of them before this application' : ''}
+        </span>
+      </h3>
+      <ol className="mt-3 flex flex-col gap-2.5">
+        {reviews.map((r) => {
+          const decided = reviewDecisionStatus(r.decision);
+          return (
+            <li key={r.id} className="rounded-lg border border-line bg-ground px-3 py-2.5">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                <StatusBadge status={decided} label={applicationStatusLabel(decided)} />
+                <span className="text-sm text-ink-muted">{formatDateTime(r.reviewedAt)}</span>
+                {r.reviewedBy ? (
+                  <span className="text-sm text-ink-muted">
+                    by <code className="text-[0.8125rem] break-all">{r.reviewedBy}</code>
+                  </span>
+                ) : null}
+              </div>
+              <p className="mt-1.5 text-[0.9375rem]">
+                {r.note ?? <span className="text-ink-muted">No note recorded.</span>}
+              </p>
+              <SubmittedThen review={r} current={app} />
+            </li>
+          );
+        })}
+      </ol>
+      {reviews.length >= APPLICATION_REVIEW_LIMIT ? (
+        <p className="mt-2 text-[0.8125rem] text-ink-muted">
+          The most recent {APPLICATION_REVIEW_LIMIT} decisions. Older ones are not shown here.
+        </p>
+      ) : null}
+    </div>
   );
 }
 
@@ -154,6 +282,7 @@ export function Applications() {
                         { label: 'Account ID', value: <code className="text-sm break-all">{app.uid}</code> },
                       ]}
                     />
+                    <DecisionHistory app={app} />
                   </Panel>
                 </li>
               ))}
