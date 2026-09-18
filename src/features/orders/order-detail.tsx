@@ -14,22 +14,22 @@ import { cancelOrder, updateOrderStatus, watchOrder } from '@/lib/data';
 import { formatDateTime, formatMoney, humanize } from '@/lib/format';
 import { mutate } from '@/lib/notify';
 import {
-  ADMIN_CANCELLABLE,
-  NEXT_ACTION_LABEL,
-  NEXT_STATUS,
+  adminCanCancel,
   cancelPreview,
   cashDue,
+  fulfilmentLikeHistory,
   historyLabel,
+  isFulfilling,
   merchantCanCancel,
+  nextActionLabel,
+  nextStatus,
   nextStatusFor,
   statusFor,
-  STATUS_LABEL,
+  statusLabel,
   linesFor,
   linesTotal,
 } from '@/lib/orders';
-import type { Order, OrderStatus } from '@/lib/types';
-
-const FULFILLING_ORDER: OrderStatus[] = ['placed', 'processing', 'shipped'];
+import type { Order, OrderStatus, OrderStatusValue } from '@/lib/types';
 import { useLive } from '@/lib/use-data';
 import { StatusStrip } from './status-strip';
 
@@ -99,7 +99,9 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
     watchOrder(userId, orderId, next, fail)
   );
   const [dialog, setDialog] = useState<'advance' | 'cancel' | null>(null);
-  const [sellerStep, setSellerStep] = useState<{ merchantId: string; from: OrderStatus; to: OrderStatus } | null>(null);
+  const [sellerStep, setSellerStep] = useState<{ merchantId: string; from: OrderStatusValue; to: OrderStatus } | null>(
+    null
+  );
 
   if (!valid) {
     return (
@@ -144,11 +146,25 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
   const shown = statusFor(order, merchantId);
   const next = nextStatusFor(order, merchantId);
   const canCancel =
-    mode === 'admin' ? ADMIN_CANCELLABLE.includes(order.status) : merchantId ? merchantCanCancel(order, merchantId) : false;
+    mode === 'admin' ? adminCanCancel(order) : merchantId ? merchantCanCancel(order, merchantId) : false;
   const preview = cancelPreview(order);
   const fulfilmentEntries = mode === 'admin' && order.fulfilment ? Object.entries(order.fulfilment) : [];
   const ownHistory = merchantId ? order.fulfilment?.[merchantId]?.history : undefined;
-  const history = ownHistory?.length ? ownHistory : (order.statusHistory ?? []);
+  // "Your part" scope: a merchant sees its own fulfilment history only. With no
+  // stored fulfilment history (orders placed before per-merchant fulfilment),
+  // the order-wide history stands in, but only for the single seller: for anyone
+  // else it would leak other sellers' progress onto this page. Even then it is
+  // not the same list — `fulfilmentLikeHistory` drops the payment events an
+  // order records and a fulfilment history never does.
+  const soleSeller = Boolean(merchantId) && order.merchantIds.length === 1 && order.merchantIds[0] === merchantId;
+  const orderHistory = order.statusHistory ?? [];
+  const history = !merchantId
+    ? orderHistory
+    : ownHistory?.length
+      ? ownHistory
+      : soleSeller
+        ? fulfilmentLikeHistory(orderHistory)
+        : [];
   const ship = order.shipping ?? {};
   const address = [ship.line1, ship.line2, ship.city, ship.region, ship.postalCode].filter(Boolean).join(', ');
 
@@ -160,7 +176,7 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
         description={`Placed ${formatDateTime(order.createdAt)}`}
         actions={
           <>
-            <StatusBadge status={shown} label={STATUS_LABEL[shown]} />
+            <StatusBadge status={shown} label={statusLabel(shown)} />
             {canCancel ? (
               <Button variant="quiet-danger" icon={<Ban aria-hidden />} onClick={() => setDialog('cancel')}>
                 Cancel order
@@ -168,7 +184,7 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
             ) : null}
             {next ? (
               <Button icon={<PackageCheck aria-hidden />} onClick={() => setDialog('advance')}>
-                {NEXT_ACTION_LABEL[shown]}
+                {nextActionLabel(shown)}
               </Button>
             ) : null}
           </>
@@ -187,15 +203,19 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
             Its stock was returned. Other sellers&apos; delivered items were kept.
           </p>
         ) : null}
-        {merchantId && order.merchantIds.length > 1 && shown !== order.status && shown !== 'cancelled' ? (
+        {merchantId && order.merchantIds.length > 1 && shown && shown !== order.status && shown !== 'cancelled' ? (
           <p className="mt-3 text-sm text-ink-muted">
-            Your part is {STATUS_LABEL[shown].toLowerCase()}. The whole order shows as{' '}
-            {STATUS_LABEL[order.status].toLowerCase()} until every seller catches up.
+            Your part is {statusLabel(shown).toLowerCase()}. The whole order shows as{' '}
+            {statusLabel(order.status).toLowerCase()} until every seller catches up.
           </p>
         ) : null}
         {fulfilmentEntries.length > 1 || order.cancelledMerchantIds?.length ? (
           <ul className="mt-4 grid gap-1.5 text-[0.9375rem] sm:grid-cols-2" aria-label="Fulfilment by seller">
-            {fulfilmentEntries.map(([m, e]) => (
+            {fulfilmentEntries.map(([m, e]) => {
+              // No stored status for this seller: nothing to advance from.
+              const from = e.status;
+              const step = isFulfilling(order.status) ? nextStatus(from) : null;
+              return (
               <li key={m} className="flex items-center justify-between gap-3 rounded-md bg-ground px-3 py-1.5">
                 <span className="min-w-0">
                   <code className="block truncate text-sm">{m}</code>
@@ -204,20 +224,21 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
                   ) : null}
                 </span>
                 <span className="flex items-center gap-2">
-                  <StatusBadge status={e.status} label={STATUS_LABEL[e.status] ?? e.status} />
-                  {FULFILLING_ORDER.includes(order.status) && NEXT_STATUS[e.status] ? (
+                  <StatusBadge status={e.status} label={statusLabel(e.status)} />
+                  {step && from ? (
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setSellerStep({ merchantId: m, from: e.status, to: NEXT_STATUS[e.status]! })}
+                      onClick={() => setSellerStep({ merchantId: m, from, to: step })}
                     >
-                      {NEXT_ACTION_LABEL[e.status]}
+                      {nextActionLabel(from)}
                       <span className="sr-only"> for {m}</span>
                     </Button>
                   ) : null}
                 </span>
               </li>
-            ))}
+              );
+            })}
           </ul>
         ) : null}
         {order.status === 'awaiting_payment' ? (
@@ -370,7 +391,7 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
             />
           </Panel>
           {history.length > 0 ? (
-            <Panel title="History" bodyClassName="px-4 py-4 sm:px-5">
+            <Panel title={merchantId ? 'History of your part' : 'History'} bodyClassName="px-4 py-4 sm:px-5">
               <ol className="flex flex-col gap-3">
                 {[...history].reverse().map((h, i) => (
                   <li key={i} className="flex items-baseline justify-between gap-4 text-[0.9375rem]">
@@ -389,20 +410,20 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
           open={dialog === 'advance'}
           onClose={() => setDialog(null)}
           tone="primary"
-          title={`${NEXT_ACTION_LABEL[shown]}?`}
+          title={`${nextActionLabel(shown)}?`}
           description={
             <>
-              {merchantId ? 'Your part of order' : 'Order'} {order.orderNumber} goes from {STATUS_LABEL[shown].toLowerCase()}{' '}
-              to <strong className="font-semibold text-ink">{STATUS_LABEL[next].toLowerCase()}</strong>. Orders only move
+              {merchantId ? 'Your part of order' : 'Order'} {order.orderNumber} goes from {statusLabel(shown).toLowerCase()}{' '}
+              to <strong className="font-semibold text-ink">{statusLabel(next).toLowerCase()}</strong>. Orders only move
               forward, so this cannot be undone.
             </>
           }
-          confirmLabel={NEXT_ACTION_LABEL[shown] ?? 'Update'}
+          confirmLabel={nextActionLabel(shown) ?? 'Update'}
           onConfirm={() =>
             mutate(() => updateOrderStatus({ userId: order.userId, orderId: order.id, status: next }), {
               success: merchantId
-                ? `Your part of order ${order.orderNumber} is ${STATUS_LABEL[next].toLowerCase()}.`
-                : `Order ${order.orderNumber} marked ${STATUS_LABEL[next].toLowerCase()}.`,
+                ? `Your part of order ${order.orderNumber} is ${statusLabel(next).toLowerCase()}.`
+                : `Order ${order.orderNumber} marked ${statusLabel(next).toLowerCase()}.`,
               error: 'Status not updated.',
             })
           }
@@ -413,9 +434,9 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
           open
           onClose={() => setSellerStep(null)}
           tone="primary"
-          title={`${NEXT_ACTION_LABEL[sellerStep.from]} for ${sellerStep.merchantId}?`}
-          description={`Only this seller's part of order ${order.orderNumber} moves to ${STATUS_LABEL[sellerStep.to].toLowerCase()}. This cannot be undone.`}
-          confirmLabel={NEXT_ACTION_LABEL[sellerStep.from] ?? 'Update'}
+          title={`${nextActionLabel(sellerStep.from)} for ${sellerStep.merchantId}?`}
+          description={`Only this seller's part of order ${order.orderNumber} moves to ${statusLabel(sellerStep.to).toLowerCase()}. This cannot be undone.`}
+          confirmLabel={nextActionLabel(sellerStep.from) ?? 'Update'}
           onConfirm={() =>
             mutate(
               () =>
@@ -426,7 +447,7 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
                   merchantId: sellerStep.merchantId,
                 }),
               {
-                success: `${sellerStep.merchantId} marked ${STATUS_LABEL[sellerStep.to].toLowerCase()}.`,
+                success: `${sellerStep.merchantId} marked ${statusLabel(sellerStep.to).toLowerCase()}.`,
                 error: 'Status not updated.',
               }
             )

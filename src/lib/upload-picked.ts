@@ -36,7 +36,7 @@ export async function uploadPicked(
         patch(img.key, { key: img.key, kind: 'existing', url });
         return url;
       } catch (error) {
-        patch(img.key, { error: describeError(error), progress: null });
+        patch(img.key, { error: describeError(error, 'write'), progress: null });
         throw error;
       }
     })
@@ -44,7 +44,7 @@ export async function uploadPicked(
 
   const failed = results.filter((r): r is PromiseRejectedResult => r.status === 'rejected');
   if (failed.length) {
-    const reason = describeError(failed[0].reason);
+    const reason = describeError(failed[0].reason, 'write');
     throw new Error(
       `${failed.length} ${failed.length === 1 ? 'image' : 'images'} did not upload. ${reason} Nothing was saved; try again.`
     );

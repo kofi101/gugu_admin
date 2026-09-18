@@ -5,6 +5,7 @@ import { ArrowLeft, Eye, EyeOff, PackagePlus, Pencil, Trash2 } from 'lucide-reac
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 import { Badge, StatusBadge } from '@/components/ui/badge';
 import { Button, ButtonLink } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/dialog';
@@ -19,7 +20,7 @@ import { mutate } from '@/lib/notify';
 import type { Product } from '@/lib/types';
 import { useLive } from '@/lib/use-data';
 import { LOW_STOCK } from './overview';
-import { ProductForm } from './product-form';
+import { ProductForm, blockerReasons, productWriteBlockers } from './product-form';
 
 type Filter = 'all' | 'live' | 'pending' | 'rejected' | 'hidden';
 
@@ -58,11 +59,30 @@ export function MerchantProducts() {
   const result = useLive<Product[]>(`m-products:${merchantId}`, (next, fail) => watchMerchantProducts(merchantId, next, fail));
 
   const toggleVisibility = async (p: Product) => {
+    // The rules validate the merged document, so a value stored elsewhere on the
+    // product refuses this write too. Say which one, instead of letting the
+    // rejection come back as a vague permission error.
+    const blockers = productWriteBlockers(p);
+    if (blockers.length) {
+      // Only point at Edit for what saving there actually repairs.
+      const next = blockers.some((b) => b.fixable)
+        ? 'Open Edit to fix it.'
+        : 'This dashboard cannot fix it — contact GUGU support.';
+      toast.error(
+        `${p.name} cannot be ${p.isActive ? 'hidden' : 'shown'} because ${blockerReasons(blockers)}. ${next}`,
+        { duration: 9000 }
+      );
+      return;
+    }
     setToggling(p.id);
     try {
       await mutate(
         () => updateDoc(doc(firebase().db, 'products', p.id), { isActive: !p.isActive, updatedAt: serverTimestamp() }),
-        { success: p.isActive ? `${p.name} is hidden from shoppers.` : `${p.name} is visible to shoppers.`, error: 'Visibility not changed.' }
+        {
+          success: p.isActive ? `${p.name} is hidden from shoppers.` : `${p.name} is visible to shoppers.`,
+          error: 'Visibility not changed.',
+          context: 'write',
+        }
       );
     } catch {
       /* toast shown */
@@ -203,6 +223,7 @@ export function MerchantProducts() {
           await mutate(() => deleteDoc(doc(firebase().db, 'products', p.id)), {
             success: `${p.name} deleted.`,
             error: 'Product not deleted.',
+            context: 'write',
           });
         }}
       />
@@ -236,9 +257,13 @@ export function EditProduct() {
   const merchantId = useMerchantId();
   const id = useSearchParams().get('id') ?? '';
   const result = useLive<Product | null>(id ? `product:${id}` : null, (next, fail) => watchProduct(id, next, fail));
-  // Freeze the first loaded version so live updates do not reset the form mid-edit.
-  const [initial, setInitial] = useState<Product | null>(null);
-  if (!initial && result.status === 'ready' && result.data) setInitial(result.data);
+  // Freeze the first loaded version so live updates do not reset the form
+  // mid-edit. The frozen copy is tagged with the id it came from: this route is
+  // not remounted when only `?id=` changes, so without the tag the form would
+  // keep showing — and saving over — the product opened first.
+  const [frozen, setFrozen] = useState<{ id: string; product: Product } | null>(null);
+  if (result.status === 'ready' && result.data && frozen?.id !== id) setFrozen({ id, product: result.data });
+  const initial = frozen?.id === id ? frozen.product : null;
 
   const header = (title: string) => <PageHeader back={<BackToProducts />} title={title} />;
 
@@ -275,7 +300,8 @@ export function EditProduct() {
   return (
     <>
       {header(`Edit ${initial.name}`)}
-      <ProductForm product={initial} />
+      {/* Keyed on the id so the form's own state (save target, images) is rebuilt per product. */}
+      <ProductForm key={initial.id} product={initial} />
     </>
   );
 }

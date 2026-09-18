@@ -13,6 +13,25 @@ export type OrderStatus =
   | 'cancelled'
   | 'payment_failed';
 
+/**
+ * What a stored `status` field may actually hold. Firestore is not typed, so a
+ * legacy or newer-than-this-build value arrives as a plain string. Those are
+ * kept verbatim and rendered through `statusLabel()`; they are never cast to
+ * `OrderStatus`, because code that switches on the known set would then be
+ * silently wrong (and `STATUS_LABEL[status]` would be `undefined`).
+ */
+export type OrderStatusValue = OrderStatus | (string & {});
+
+/**
+ * One row of an order's `statusHistory`, or of a merchant's fulfilment history.
+ *
+ * `status` is optional for the same reason a fulfilment entry's is: a stored row
+ * that carries no usable status recorded none, and coercing it to `placed` would
+ * put a status in the merchant's history that the document never claimed. Such a
+ * row still has a true `at`/`by`, so it is kept and rendered as "Unknown".
+ */
+export type OrderHistoryEntry = { status?: OrderStatusValue; at?: Timestamp; by?: string };
+
 export type PaymentStatus = 'unpaid' | 'pending' | 'paid' | 'failed';
 export type PaymentMethod = 'cash_on_delivery' | 'mobile_money_on_delivery' | 'expresspay';
 
@@ -32,7 +51,16 @@ export type Order = {
   /** users/{userId}/orders/{id} */
   userId: string;
   orderNumber: string;
-  status: OrderStatus;
+  /**
+   * Absent when the stored document records no usable status, for the same
+   * reason a history row's and a fulfilment entry's is: coercing it to `placed`
+   * would claim a step the document never took, and would offer "Start
+   * processing" on an order nobody placed. Everything that reads it — the badge,
+   * the strip, `isFulfilling`, `nextStatus`, `adminCanCancel`, the merchant
+   * filters and the overview's "Other" bucket — already treats an unusable
+   * status as no status.
+   */
+  status?: OrderStatusValue;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   lines: OrderLine[];
@@ -53,14 +81,19 @@ export type Order = {
   };
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
-  statusHistory?: { status: OrderStatus | 'partially_cancelled'; at?: Timestamp; by?: string }[];
+  statusHistory?: OrderHistoryEntry[];
   /** Per-merchant fulfilment; the order status is the least-advanced entry. */
   fulfilment?: Record<
     string,
     {
-      status: OrderStatus;
+      /**
+       * Absent when the stored entry carries no usable status. That is not the
+       * same as `placed`: nothing has been recorded for this seller, so the
+       * dashboard offers no next step for it.
+       */
+      status?: OrderStatusValue;
       deliveredAt?: Timestamp;
-      history?: { status: OrderStatus | 'partially_cancelled'; at?: Timestamp; by?: string }[];
+      history?: OrderHistoryEntry[];
     }
   >;
   /** Merchants whose undelivered parts were cancelled; delivered parts are kept. */
@@ -99,10 +132,19 @@ export type Product = {
   highlights?: string[];
   returnPolicy?: string;
   supportNote?: string;
+  /** Contract cap: 10 ids. Older products may carry more and must be trimmed to save. */
+  relatedProductIds?: string[];
   approvalStatus?: ApprovalStatus;
   reviewNote?: string;
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
+  /**
+   * The document exactly as Firestore stored it, set by `toProduct`. The fields
+   * above are sanitised for rendering, but the product rules validate the merged
+   * *stored* document, so the write-blocker check reads this. Parse-time only:
+   * it is never written back.
+   */
+  stored?: Record<string, unknown>;
 };
 
 export type Merchant = {

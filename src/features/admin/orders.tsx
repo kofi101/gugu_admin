@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { FilterTabs, SearchInput } from '@/components/ui/filters';
 import { PageHeader, Panel } from '@/components/ui/panel';
 import { DataView, EmptyState } from '@/components/ui/states';
-import { watchAllOrders } from '@/lib/data';
+import { ADMIN_ORDER_LIMIT, watchAllOrders } from '@/lib/data';
 import { ORDER_STATUSES, STATUS_LABEL } from '@/lib/orders';
 import type { Order, OrderStatus, PaymentMethod } from '@/lib/types';
 import { useLive } from '@/lib/use-data';
@@ -25,11 +25,14 @@ export function AdminOrders() {
   const [payment, setPayment] = useState<PaymentMethod | 'all'>('all');
 
   // Status filters server-side (index: orders status+createdAt, collection group).
-  const result = useLive<Order[]>(`admin-orders:${status}`, (next, fail) => watchAllOrders(status, next, fail, 300));
+  const result = useLive<Order[]>(`admin-orders:${status}`, (next, fail) => watchAllOrders(status, next, fail));
 
   return (
     <>
-      <PageHeader title="All orders" description="Every order on GUGU, newest first. Shows the latest 300 for the chosen status." />
+      <PageHeader
+        title="All orders"
+        description={`Every order on GUGU, newest first. Shows the latest ${ADMIN_ORDER_LIMIT} for the chosen status.`}
+      />
       <Panel>
         <div className="flex flex-col gap-3 border-b border-line px-4 py-3 sm:px-5">
           <FilterTabs
@@ -77,7 +80,17 @@ export function AdminOrders() {
               );
             }
             if (visible.length === 0) return <EmptyState title="No orders match">Clear the search or payment filter.</EmptyState>;
-            return <OrderRows orders={visible} merchantId={null} base="/admin/orders" />;
+            return (
+              <>
+                {orders.length >= ADMIN_ORDER_LIMIT ? (
+                  <p className="border-b border-line bg-thread-50 px-4 py-2.5 text-[0.8125rem] text-thread-800 sm:px-5">
+                    This is the newest {ADMIN_ORDER_LIMIT} of a longer list; older orders are not reachable here. Pick a
+                    single status above to see further back.
+                  </p>
+                ) : null}
+                <OrderRows orders={visible} merchantId={null} base="/admin/orders" />
+              </>
+            );
           }}
         </DataView>
       </Panel>

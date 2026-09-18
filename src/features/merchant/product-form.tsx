@@ -18,7 +18,7 @@ import { useMerchantId } from '@/lib/auth';
 import { watchCategories, watchSubcategories } from '@/lib/data';
 import { describeError } from '@/lib/errors';
 import { firebase } from '@/lib/firebase';
-import { formatMoney } from '@/lib/format';
+import { formatCount, formatMoney } from '@/lib/format';
 import type { Category, Product, SubCategory } from '@/lib/types';
 import { uploadPicked } from '@/lib/upload-picked';
 import { useLive } from '@/lib/use-data';
@@ -32,10 +32,264 @@ export const PRODUCT_LIMITS = {
   stockMax: 100_000,
   textMax: 2000,
   listMax: 20,
+  /** The contract lowered related products from 20 to 10. */
+  relatedMax: 10,
+  /** Per-element cap the rules apply to related product ids, and to stored ids. */
+  idMax: 128,
+  specificationsMax: 50,
 } as const;
 
 /** Same pattern as the product rules' noContactInfo(): no off-platform contact or payment details. */
 const CONTACT_INFO = /(momo|mobile money|whatsapp|[0-9+][0-9 ()+-]{8,}[0-9])/s;
+
+const CONTACT_MESSAGE =
+  'Remove phone numbers, MoMo, mobile money or WhatsApp details. Customers pay and contact you through GUGU.';
+
+/** Defensive: Firestore may hold anything here, and a non-string has no `.toLowerCase()`. */
+const hasContactInfo = (v: unknown): boolean => typeof v === 'string' && CONTACT_INFO.test(v.toLowerCase());
+
+/**
+ * One reason the product rules would refuse a write to this product.
+ *
+ * The rules validate the *merged* document, so a value already stored — even in
+ * a field this form never shows — refuses every later write, including the
+ * Hide/Show toggle that never touches it.
+ */
+export type WriteBlocker = {
+  /** Reads after "because …", in the merchant's words. */
+  reason: string;
+  /** The stored field at fault. */
+  field: string;
+  /** True when saving this form writes a value that clears it. */
+  fixable: boolean;
+};
+
+/** Fields the form rewrites only as part of a content edit (which forces re-approval). */
+const CONTENT_FIELDS = ['name', 'description', 'categoryId', 'subCategoryId', 'imageUrls', 'highlights'];
+
+/**
+ * Blocked fields a commercial-only save cannot clear, so saving has to take the
+ * review path instead. The content fields, because that write is the only one
+ * that rewrites them; and `isActive`, because the update rule's own gate is only
+ * satisfied by a write that sets `approvalStatus: 'pending'` and `isActive: false`.
+ */
+const REVIEW_FORCING_FIELDS = [...CONTENT_FIELDS, 'isActive'];
+
+/**
+ * What the rules see. The parsed Product is sanitised for rendering (a stored
+ * number in `supportNote` is dropped rather than rendered), but the rules still
+ * read the stored value, so the checks below must too.
+ */
+const storedValue = (p: Product, key: string): unknown =>
+  p.stored ? p.stored[key] : (p as unknown as Record<string, unknown>)[key];
+
+/**
+ * Rules treat a missing value and an explicit null the same: neither is checked.
+ * True of every optional field whose rule spells out `d[key] == null ||`, which
+ * is all of them bar one — see `storedHas` for the exception.
+ */
+const isUnset = (v: unknown) => v === undefined || v === null;
+
+/**
+ * `key in d`, as the rules ask it.
+ *
+ * Only `currency` needs this. Its rule is `!('currency' in d) || d.currency ==
+ * 'GHS'` with no `== null` escape, so a stored `currency: null` is *present* and
+ * not `'GHS'`: the rules refuse the write, including the Hide/Show toggle, while
+ * `isUnset` would read it as absent and raise no banner at all.
+ */
+const storedHas = (p: Product, key: string): boolean =>
+  key in (p.stored ?? (p as unknown as Record<string, unknown>));
+
+const count = formatCount;
+
+/** A bounded, contact-checked text field: returnPolicy and supportNote. */
+function textBlockers(p: Product, field: string, label: string): WriteBlocker[] {
+  const v = storedValue(p, field);
+  if (isUnset(v)) return [];
+  if (typeof v !== 'string') return [{ field, fixable: true, reason: `its ${label} is not saved as text` }];
+  const out: WriteBlocker[] = [];
+  if (v.length > PRODUCT_LIMITS.textMax)
+    out.push({ field, fixable: true, reason: `its ${label} is longer than ${count(PRODUCT_LIMITS.textMax)} characters` });
+  if (hasContactInfo(v)) out.push({ field, fixable: true, reason: `its ${label} has contact details in it` });
+  return out;
+}
+
+/** A list the rules only count: imageUrls and highlights. */
+function listBlockers(p: Product, field: string, label: string): WriteBlocker[] {
+  const v = storedValue(p, field);
+  if (isUnset(v)) return [];
+  if (!Array.isArray(v)) return [{ field, fixable: true, reason: `its ${label} are not saved as a list` }];
+  return v.length > PRODUCT_LIMITS.listMax
+    ? [{ field, fixable: true, reason: `it has ${count(v.length)} ${label} and GUGU allows ${PRODUCT_LIMITS.listMax}` }]
+    : [];
+}
+
+/**
+ * The compliant `relatedProductIds` to write back, or null when the stored value
+ * already passes. Returned rather than assumed, because the stored value may not
+ * be a list at all — slicing a string produced a shorter string, which the rules
+ * rejected just the same.
+ */
+export function relatedProductIdsFix(p: Product): string[] | null {
+  const v = storedValue(p, 'relatedProductIds');
+  if (isUnset(v)) return null;
+  const ok =
+    Array.isArray(v) &&
+    v.length <= PRODUCT_LIMITS.relatedMax &&
+    v.every((x) => typeof x === 'string' && x.length <= PRODUCT_LIMITS.idMax);
+  if (ok) return null;
+  // Keep whatever is usable, in order, up to the cap; drop the rest.
+  const usable = Array.isArray(v)
+    ? v.filter((x): x is string => typeof x === 'string' && x.length <= PRODUCT_LIMITS.idMax)
+    : [];
+  return usable.slice(0, PRODUCT_LIMITS.relatedMax);
+}
+
+/**
+ * Every reason the product rules would refuse a write to this product, checked
+ * against the stored document the way `productValuesOk()` in
+ * gugu_2.0/firestore.rules does. `fixable` says whether saving this form clears
+ * it; the rest need GUGU staff, and the banner says so rather than promising a
+ * fix the form cannot deliver.
+ */
+export function productWriteBlockers(p: Product): WriteBlocker[] {
+  const out: WriteBlocker[] = [];
+
+  const name = storedValue(p, 'name');
+  if (typeof name !== 'string' || name.length === 0)
+    out.push({ field: 'name', fixable: true, reason: 'it has no name' });
+  else if (name.length > PRODUCT_LIMITS.nameMax)
+    out.push({ field: 'name', fixable: true, reason: `its name is longer than ${PRODUCT_LIMITS.nameMax} characters` });
+
+  const description = storedValue(p, 'description');
+  if (!isUnset(description)) {
+    if (typeof description !== 'string')
+      out.push({ field: 'description', fixable: true, reason: 'its description is not saved as text' });
+    else if (description.length > PRODUCT_LIMITS.descriptionMax)
+      out.push({
+        field: 'description',
+        fixable: true,
+        reason: `its description is longer than ${count(PRODUCT_LIMITS.descriptionMax)} characters`,
+      });
+  }
+
+  const price = storedValue(p, 'price');
+  const priceOk =
+    typeof price === 'number' && Number.isFinite(price) && price >= PRODUCT_LIMITS.priceMin && price <= PRODUCT_LIMITS.priceMax;
+  if (!priceOk)
+    out.push({
+      field: 'price',
+      fixable: true,
+      reason: `its price is not between ${formatMoney(PRODUCT_LIMITS.priceMin)} and ${formatMoney(PRODUCT_LIMITS.priceMax)}`,
+    });
+
+  const discount = storedValue(p, 'discountPrice');
+  if (!isUnset(discount) && discount !== 0) {
+    const discountOk =
+      typeof discount === 'number' &&
+      Number.isFinite(discount) &&
+      discount >= PRODUCT_LIMITS.priceMin &&
+      typeof price === 'number' &&
+      discount < price;
+    if (!discountOk)
+      out.push({ field: 'discountPrice', fixable: true, reason: 'its sale price is not below its price' });
+  }
+
+  // Present-and-not-GHS, not "set and not GHS": a stored null is refused too, and
+  // saving repairs it, because every write from this form sets currency to GHS.
+  const currency = storedValue(p, 'currency');
+  if (storedHas(p, 'currency') && currency !== 'GHS')
+    out.push({
+      field: 'currency',
+      fixable: true,
+      reason: isUnset(currency) ? 'its currency is saved as empty instead of GHS' : 'its currency is not GHS',
+    });
+
+  const stock = storedValue(p, 'stockQuantity');
+  if (!isUnset(stock) && !(Number.isInteger(stock) && (stock as number) >= 0 && (stock as number) <= PRODUCT_LIMITS.stockMax))
+    out.push({
+      field: 'stockQuantity',
+      fixable: true,
+      reason: `its stock is not a whole number between 0 and ${count(PRODUCT_LIMITS.stockMax)}`,
+    });
+
+  for (const [field, label] of [
+    ['categoryId', 'category'],
+    ['subCategoryId', 'subcategory'],
+  ] as const) {
+    const v = storedValue(p, field);
+    if (!isUnset(v) && !(typeof v === 'string' && v.length <= PRODUCT_LIMITS.idMax))
+      out.push({ field, fixable: true, reason: `its ${label} is not saved as GUGU expects` });
+  }
+
+  out.push(...listBlockers(p, 'imageUrls', 'photos'));
+  out.push(...listBlockers(p, 'highlights', 'highlights'));
+  out.push(...textBlockers(p, 'returnPolicy', 'return policy'));
+  out.push(...textBlockers(p, 'supportNote', 'support note'));
+
+  const related = storedValue(p, 'relatedProductIds');
+  if (relatedProductIdsFix(p) !== null) {
+    out.push({
+      field: 'relatedProductIds',
+      fixable: true,
+      reason: Array.isArray(related)
+        ? `it links to ${count(related.length)} related products and GUGU now allows ${PRODUCT_LIMITS.relatedMax}`
+        : 'its related products are not saved as a list',
+    });
+  }
+
+  // Not editable here: the form never writes these, so saving cannot clear them.
+  const specs = storedValue(p, 'specifications');
+  if (!isUnset(specs)) {
+    if (typeof specs !== 'object' || Array.isArray(specs))
+      out.push({ field: 'specifications', fixable: false, reason: 'its specifications are not saved as a table' });
+    else if (Object.keys(specs as object).length > PRODUCT_LIMITS.specificationsMax)
+      out.push({
+        field: 'specifications',
+        fixable: false,
+        reason: `it has ${count(Object.keys(specs as object).length)} specifications and GUGU allows ${PRODUCT_LIMITS.specificationsMax}`,
+      });
+  }
+
+  const storedId = storedValue(p, 'id');
+  if (!isUnset(storedId) && !(typeof storedId === 'string' && storedId.length <= PRODUCT_LIMITS.idMax))
+    out.push({ field: 'id', fixable: false, reason: 'its stored product ID is not saved as GUGU expects' });
+
+  // Not a `productValuesOk()` check: the *update* rule's own gate, which the
+  // banner has to cover too, or "GUGU will refuse any change" would be silent on
+  // a write it really does refuse. A product stored live but never approved
+  // (`isActive: true` with `approvalStatus` missing or not 'approved') fails
+  //   request.resource.data.get('isActive', false) != true
+  //     || (resource.data.get('approvalStatus', null) == 'approved'
+  //         && request.resource.data.get('approvalStatus', null) == 'approved')
+  // (quoted from firestore.rules:228-230 — `.get(…, null)`, not a bare field
+  // read, so it holds for a document that has no `approvalStatus` at all)
+  // on every save that leaves `isActive` alone — that is, every commercial-only
+  // save. It is fixable, but only by a save that also writes
+  // `{ approvalStatus: 'pending', isActive: false }`, so `REVIEW_FORCING_FIELDS`
+  // above makes this blocker force that write the way a content blocker does.
+  if (storedValue(p, 'isActive') === true && storedValue(p, 'approvalStatus') !== 'approved')
+    out.push({
+      field: 'isActive',
+      fixable: true,
+      reason: 'it is showing to shoppers without being approved',
+    });
+
+  return out;
+}
+
+/** The blocker reasons, for a sentence that follows "because …". */
+export const blockerReasons = (blockers: WriteBlocker[]) => blockers.map((b) => b.reason).join(', and ');
+
+/** Merchant-facing names for the stored fields this form cannot edit. */
+const FIELD_LABEL: Record<string, string> = {
+  specifications: 'the specifications table',
+  id: 'the stored product ID',
+};
+
+const listPhrase = (items: string[]) =>
+  items.length < 2 ? (items[0] ?? '') : `${items.slice(0, -1).join(', ')} or ${items[items.length - 1]}`;
 
 const MONEY = /^\d{1,8}(\.\d{1,2})?$/;
 const highlightCount = (v: string) => v.split('\n').filter((l) => l.trim()).length;
@@ -74,10 +328,12 @@ const schema = z
       .string()
       .trim()
       .max(PRODUCT_LIMITS.textMax, 'Keep this to 2,000 characters or fewer.')
-      .refine(
-        (v) => !CONTACT_INFO.test(v.toLowerCase()),
-        'Remove phone numbers, MoMo, mobile money or WhatsApp details. Customers pay and contact you through GUGU.'
-      ),
+      .refine((v) => !CONTACT_INFO.test(v.toLowerCase()), CONTACT_MESSAGE),
+    supportNote: z
+      .string()
+      .trim()
+      .max(PRODUCT_LIMITS.textMax, 'Keep this to 2,000 characters or fewer.')
+      .refine((v) => !CONTACT_INFO.test(v.toLowerCase()), CONTACT_MESSAGE),
   })
   .superRefine((v, ctx) => {
     // discountPrice: empty or 0 means no sale; otherwise 0.01 <= sale < price.
@@ -103,6 +359,7 @@ function defaults(p?: Product): Values {
     stockQuantity: typeof p?.stockQuantity === 'number' ? String(p.stockQuantity) : '',
     highlights: (p?.highlights ?? []).join('\n'),
     returnPolicy: p?.returnPolicy ?? '',
+    supportNote: p?.supportNote ?? '',
   };
 }
 
@@ -157,8 +414,25 @@ export function ProductForm({ product }: { product?: Product }) {
     control,
     name: ['categoryId', 'price', 'discountPrice', 'name', 'description', 'subCategoryId', 'highlights'],
   });
+  const blockers = useMemo(() => (product ? productWriteBlockers(product) : []), [product]);
+  const fixable = blockers.filter((b) => b.fixable);
+  const unfixable = blockers.filter((b) => !b.fixable);
+  // A stored related-products list the rules refuse is repaired by this save;
+  // there is nothing for the merchant to type first.
+  const relatedFix = product ? relatedProductIdsFix(product) : null;
+  // These are only cleared by the write that also sends the product back for
+  // review, so a blocker in one of them has to force that write — otherwise
+  // saving leaves it in place and the rules refuse the save again.
+  const contentBlocked = fixable.some((b) => REVIEW_FORCING_FIELDS.includes(b.field));
+  // The one blocker that is not a stored *value* the merchant has to correct:
+  // the product is live without approval, and saving alone repairs it. When it is
+  // the only blocker the banner must not send them looking for a field to fix,
+  // and hiding the product is in fact the one write the rules would still accept.
+  const onlyReviewBlocked = blockers.length > 0 && blockers.every((b) => b.field === 'isActive');
+
   const willReview =
     !product ||
+    contentBlocked ||
     contentChanged(product, {
       name: wName.trim(),
       description: wDescription.trim(),
@@ -185,7 +459,12 @@ export function ProductForm({ product }: { product?: Product }) {
     setImageError(undefined);
     setSaving(true);
     try {
-      const imageUrls = await uploadPicked(images, `products/${merchantId}/${productId}`, setImages);
+      // Sliced: a stored list already over the cap must come back under it, and
+      // the picker only stops *new* images past the cap.
+      const imageUrls = (await uploadPicked(images, `products/${merchantId}/${productId}`, setImages)).slice(
+        0,
+        PRODUCT_LIMITS.listMax
+      );
       const content = {
         name: values.name,
         description: values.description,
@@ -201,12 +480,16 @@ export function ProductForm({ product }: { product?: Product }) {
         currency: 'GHS',
         stockQuantity: Number(values.stockQuantity),
         returnPolicy: values.returnPolicy,
+        supportNote: values.supportNote,
+        // The rules check the merged document, so a list this form does not
+        // otherwise touch would refuse the save. Repair it in the same write.
+        ...(relatedFix ? { relatedProductIds: relatedFix } : {}),
         updatedAt: serverTimestamp(),
       };
       // Content edits (and new products) must go back to review, off the shelf, in the same write.
       const review = { approvalStatus: 'pending' as const, isActive: false };
       const ref = doc(firebase().db, 'products', productId);
-      const needsReview = !product || contentChanged(product, content);
+      const needsReview = !product || contentChanged(product, content) || contentBlocked;
       if (!product) {
         await setDoc(ref, { ...content, ...commercial, ...review, id: productId, merchantId, createdAt: serverTimestamp() });
       } else if (needsReview) {
@@ -224,7 +507,7 @@ export function ProductForm({ product }: { product?: Product }) {
       );
       router.push(needsReview ? '/merchant/products?filter=pending' : '/merchant/products');
     } catch (error) {
-      const message = describeError(error);
+      const message = describeError(error, 'write');
       setSaveError(message);
       toast.error(editing ? `Changes not saved. ${message}` : `Product not added. ${message}`, { duration: 7000 });
     } finally {
@@ -232,6 +515,13 @@ export function ProductForm({ product }: { product?: Product }) {
     }
   };
 
+  const unfixableFields = Array.from(new Set(unfixable.map((b) => FIELD_LABEL[b.field] ?? b.field)));
+  // What the save does to `relatedProductIds` on its own, so the banner can promise it.
+  const relatedNote = !relatedFix
+    ? null
+    : relatedFix.length
+      ? `keeps the first ${relatedFix.length} related ${relatedFix.length === 1 ? 'product' : 'products'} and drops the rest`
+      : 'clears the related products GUGU could not read';
   const catalogError = categories.status === 'error' ? categories : subcategories.status === 'error' ? subcategories : null;
   const salePreview = MONEY.test(price) && MONEY.test(discount) && Number(discount) < Number(price) ? Number(discount) : null;
 
@@ -244,12 +534,48 @@ export function ProductForm({ product }: { product?: Product }) {
       noValidate
       className="flex flex-col gap-6"
     >
+      {product && blockers.length ? (
+        <div
+          role="alert"
+          className="flex items-start gap-3 rounded-[var(--radius-panel)] border border-bad-700/25 bg-bad-50 px-4 py-3 text-[0.9375rem] text-bad-700"
+        >
+          <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
+          <p>
+            <strong className="font-semibold">GUGU will refuse any change to this product until it is fixed</strong>{' '}
+            because {blockerReasons([...fixable, ...unfixable])}.{' '}
+            {onlyReviewBlocked ? 'That includes showing it to shoppers.' : 'That includes hiding or showing it.'}
+            {fixable.length ? (
+              <>
+                {' '}
+                {onlyReviewBlocked
+                  ? 'Saving this form clears it: the product goes back to GUGU staff for approval and stays hidden from shoppers until they have checked it.'
+                  : `Fix the fields below and save — that clears ${unfixable.length ? 'those' : 'it'}.`}
+                {relatedNote ? ` Saving also ${relatedNote}.` : ''}
+              </>
+            ) : null}
+            {unfixable.length ? (
+              <>
+                {' '}
+                This dashboard cannot edit {listPhrase(unfixableFields)}, so saving will not clear{' '}
+                {unfixable.length === 1 ? 'that' : 'those'}. Contact GUGU support, quote this product&apos;s name, and
+                ask staff to correct it.
+              </>
+            ) : null}
+          </p>
+        </div>
+      ) : null}
+
       {product ? (
         <div className="flex items-start gap-3 rounded-[var(--radius-panel)] border border-thread-300 bg-thread-50 px-4 py-3 text-[0.9375rem] text-thread-800">
           <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
           <p aria-live="polite">
             Currently <StatusBadge status={product.approvalStatus ?? 'pending'} />.{' '}
-            {willReview && (isDirty || imagesChanged) ? (
+            {contentBlocked ? (
+              <strong className="font-semibold">
+                Clearing what is blocking this product needs the write that sends it back to GUGU staff for approval, so
+                saving hides it from shoppers until they have checked it.
+              </strong>
+            ) : willReview && (isDirty || imagesChanged) ? (
               <strong className="font-semibold">
                 You changed the name, photos, description, category or highlights. Saving sends the product back to GUGU
                 staff for approval and hides it from shoppers until then.
@@ -364,6 +690,13 @@ export function ProductForm({ product }: { product?: Product }) {
         <Field label="Return policy" hint="For example: Returns accepted within 7 days if unused." error={errors.returnPolicy?.message}>
           {(p) => <Input {...p} {...register('returnPolicy')} />}
         </Field>
+        <Field
+          label="Support note"
+          hint="Shown to shoppers who need help with this product. No phone numbers, MoMo or WhatsApp — GUGU handles contact."
+          error={errors.supportNote?.message}
+        >
+          {(p) => <Textarea {...p} rows={3} {...register('supportNote')} />}
+        </Field>
       </Panel>
 
       {saveError ? (
@@ -376,7 +709,8 @@ export function ProductForm({ product }: { product?: Product }) {
         <ButtonLink href="/merchant/products" variant="secondary">
           Cancel
         </ButtonLink>
-        <Button type="submit" loading={saving} disabled={editing && !isDirty && !imagesChanged}>
+        {/* Blockers this form repairs by itself are fixed by saving, with nothing to type first. */}
+        <Button type="submit" loading={saving} disabled={editing && !isDirty && !imagesChanged && !fixable.length}>
           {saving ? 'Saving…' : !editing ? 'Add product' : willReview ? 'Save and send for approval' : 'Save changes'}
         </Button>
       </div>

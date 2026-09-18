@@ -137,7 +137,7 @@ function BannerDialog({ banner, onClose }: { banner?: Banner; onClose: () => voi
             await setDoc(ref, { ...data, id: ref.id, createdById: user.uid, createdAt: serverTimestamp() });
           }
         },
-        { success: banner ? 'Banner saved.' : 'Banner added.', error: 'Banner not saved.' }
+        { success: banner ? 'Banner saved.' : 'Banner added.', error: 'Banner not saved.', context: 'write' }
       );
       onClose();
     } catch {
@@ -256,6 +256,7 @@ export function Banners() {
       await mutate(() => updateDoc(doc(firebase().db, 'banners', b.id), { status: next, updatedAt: serverTimestamp() }), {
         success: next === 'show' ? `${b.title} is showing.` : `${b.title} is hidden.`,
         error: 'Banner not updated.',
+        context: 'write',
       });
     } catch {
       /* toast shown */
@@ -337,7 +338,11 @@ export function Banners() {
         onConfirm={async () => {
           const b = toDelete;
           if (!b) return;
-          await mutate(() => deleteDoc(doc(firebase().db, 'banners', b.id)), { success: `${b.title} deleted.`, error: 'Banner not deleted.' });
+          await mutate(() => deleteDoc(doc(firebase().db, 'banners', b.id)), {
+            success: `${b.title} deleted.`,
+            error: 'Banner not deleted.',
+            context: 'write',
+          });
         }}
       />
     </>

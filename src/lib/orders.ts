@@ -1,4 +1,5 @@
-import type { Order, OrderLine, OrderStatus } from './types';
+import { humanize } from './format';
+import type { Order, OrderHistoryEntry, OrderLine, OrderStatus, OrderStatusValue } from './types';
 
 export const ORDER_STATUSES: OrderStatus[] = [
   'awaiting_payment',
@@ -20,9 +21,45 @@ export const STATUS_LABEL: Record<OrderStatus, string> = {
   payment_failed: 'Payment failed',
 };
 
-export function historyLabel(status: string): string {
+/** True only for the seven statuses this build understands. */
+export function isOrderStatus(value: unknown): value is OrderStatus {
+  return typeof value === 'string' && (ORDER_STATUSES as string[]).includes(value);
+}
+
+/**
+ * Total label lookup. A legacy or unexpected value reads back as itself
+ * ("Awaiting pickup") instead of throwing on `STATUS_LABEL[status].toLowerCase()`.
+ */
+export function statusLabel(status: OrderStatusValue | null | undefined): string {
+  if (typeof status !== 'string' || !status) return 'Unknown';
+  return isOrderStatus(status) ? STATUS_LABEL[status] : humanize(status);
+}
+
+export function historyLabel(status: OrderStatusValue | undefined): string {
   if (status === 'partially_cancelled') return 'Partly cancelled';
-  return STATUS_LABEL[status as OrderStatus] ?? status;
+  return statusLabel(status);
+}
+
+/**
+ * Statuses only an order's own `statusHistory` records. They are payment events:
+ * no merchant's fulfilment history ever carries them, so they must not appear
+ * under "History of your part".
+ */
+const PAYMENT_ONLY: string[] = ['awaiting_payment', 'payment_failed'];
+
+/**
+ * The order-wide history narrowed to the rows a merchant's own fulfilment
+ * history would also hold, for the sole-seller fallback below.
+ *
+ * The two are close but not identical. On an online-payment order the order also
+ * logs `awaiting_payment`, and `payment_failed` if the payment is declined;
+ * neither is written to any `fulfilment[merchantId].history`. `placed` is kept,
+ * because fulfilment records it too (at creation) — on an ExpressPay order the
+ * order-wide row is written by the payment provider when the money clears, but
+ * it marks the same thing: this seller's part may now be prepared.
+ */
+export function fulfilmentLikeHistory(history: OrderHistoryEntry[]): OrderHistoryEntry[] {
+  return history.filter((h) => typeof h.status !== 'string' || !PAYMENT_ONLY.includes(h.status));
 }
 
 /** The fulfilment path shown as a woven strip. */
@@ -45,21 +82,51 @@ export const ADMIN_CANCELLABLE: OrderStatus[] = ['awaiting_payment', 'placed', '
 
 const FULFILLING: OrderStatus[] = ['placed', 'processing', 'shipped'];
 
+/** The order as a whole is being fulfilled (an unknown or missing status never is). */
+export function isFulfilling(status: OrderStatusValue | undefined): boolean {
+  return typeof status === 'string' && (FULFILLING as string[]).includes(status);
+}
+
+/** The step this status may move to, or null. Unknown and missing values never move. */
+export function nextStatus(status: OrderStatusValue | undefined): OrderStatus | null {
+  return isOrderStatus(status) ? (NEXT_STATUS[status] ?? null) : null;
+}
+
+/** Button text for `nextStatus`, or null when there is no next step. */
+export function nextActionLabel(status: OrderStatusValue | undefined): string | null {
+  return isOrderStatus(status) ? (NEXT_ACTION_LABEL[status] ?? null) : null;
+}
+
+/**
+ * Admins may cancel an order that has not been delivered or closed. An order
+ * with no recorded status is not one of them: there is no stored step to cancel
+ * from, and the backend would refuse the transition anyway.
+ */
+export function adminCanCancel(order: Order): boolean {
+  return typeof order.status === 'string' && (ADMIN_CANCELLABLE as string[]).includes(order.status);
+}
+
 /**
  * The status a merchant sees: its own `fulfilment[merchantId]` entry while the
  * order is in fulfilment or delivered, otherwise the order status (awaiting
  * payment, cancelled, payment failed).
+ *
+ * `undefined` when this merchant *has* a fulfilment entry but it records no
+ * status, and when the order itself records none. Falling back to the order
+ * status — or, for the order, to `placed` — would invent progress the stored
+ * document never claimed.
  */
-export function statusFor(order: Order, merchantId: string | null): OrderStatus {
+export function statusFor(order: Order, merchantId: string | null): OrderStatusValue | undefined {
   if (!merchantId) return order.status;
-  if (!FULFILLING.includes(order.status) && order.status !== 'delivered') return order.status;
-  return order.fulfilment?.[merchantId]?.status ?? order.status;
+  if (!isFulfilling(order.status) && order.status !== 'delivered') return order.status;
+  const entry = order.fulfilment?.[merchantId];
+  return entry ? entry.status : order.status;
 }
 
 /** Next step this viewer may request, or null. Only offered while the order is in fulfilment. */
 export function nextStatusFor(order: Order, merchantId: string | null): OrderStatus | null {
-  if (!FULFILLING.includes(order.status)) return null;
-  return NEXT_STATUS[statusFor(order, merchantId)] ?? null;
+  if (!isFulfilling(order.status)) return null;
+  return nextStatus(statusFor(order, merchantId));
 }
 
 /** Merchants may cancel placed/processing orders that contain only their own lines. */

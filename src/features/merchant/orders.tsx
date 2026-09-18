@@ -6,16 +6,18 @@ import { FilterTabs, SearchInput } from '@/components/ui/filters';
 import { PageHeader, Panel } from '@/components/ui/panel';
 import { DataView, EmptyState } from '@/components/ui/states';
 import { useMerchantId } from '@/lib/auth';
-import { watchMerchantOrders } from '@/lib/data';
+import { MERCHANT_ORDER_LIMIT, watchMerchantOrders } from '@/lib/data';
 import { statusFor } from '@/lib/orders';
-import type { Order, OrderStatus } from '@/lib/types';
+import type { Order, OrderStatusValue } from '@/lib/types';
 import { useLive } from '@/lib/use-data';
 import { OrderDetail } from '../orders/order-detail';
 import { OrderRows } from '../orders/order-rows';
 
 type Filter = 'open' | 'placed' | 'processing' | 'shipped' | 'delivered' | 'closed' | 'all';
 
-const matches: Record<Filter, (s: OrderStatus) => boolean> = {
+// A seller's fulfilment entry may record no status at all, which matches no
+// status filter but still shows under "All".
+const matches: Record<Filter, (s: OrderStatusValue | undefined) => boolean> = {
   open: (s) => s === 'placed' || s === 'processing' || s === 'shipped' || s === 'awaiting_payment',
   placed: (s) => s === 'placed',
   processing: (s) => s === 'processing',
@@ -97,7 +99,17 @@ export function MerchantOrders() {
                 </EmptyState>
               );
             }
-            return <OrderRows orders={visible} merchantId={merchantId} base="/merchant/orders" />;
+            return (
+              <>
+                {orders.length >= MERCHANT_ORDER_LIMIT ? (
+                  <p className="border-b border-line bg-thread-50 px-4 py-2.5 text-[0.8125rem] text-thread-800 sm:px-5">
+                    Only your {MERCHANT_ORDER_LIMIT} most recent orders are listed, so counts and totals here cover those.
+                    Older orders are not shown.
+                  </p>
+                ) : null}
+                <OrderRows orders={visible} merchantId={merchantId} base="/merchant/orders" />
+              </>
+            );
           }}
         </DataView>
       </Panel>
