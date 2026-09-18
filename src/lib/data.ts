@@ -50,9 +50,6 @@ const statusOrNone = (v: unknown): OrderStatusValue | undefined => {
   return str(v)?.trim() || undefined;
 };
 
-/** As `statusOrNone`, for the order's own status, which every order has. */
-const status = (v: unknown): OrderStatusValue => statusOrNone(v) ?? 'placed';
-
 type HistoryEntry = NonNullable<Order['statusHistory']>[number];
 
 /**
@@ -127,7 +124,10 @@ export function toOrder(snap: Snap): Order {
     id: snap.id,
     userId: str(d.userId) ?? snap.ref.parent.parent?.id ?? '',
     orderNumber: str(d.orderNumber) ?? snap.id,
-    status: status(d.status),
+    // No `?? 'placed'`: an order document that records no status is in the same
+    // position as a history row or a fulfilment entry that records none, and the
+    // branch already refuses to invent one there.
+    status: statusOrNone(d.status),
     paymentMethod: (str(d.paymentMethod) ?? 'cash_on_delivery') as Order['paymentMethod'],
     paymentStatus: (str(d.paymentStatus) ?? 'unpaid') as Order['paymentStatus'],
     lines: Array.isArray(d.lines) ? d.lines : [],

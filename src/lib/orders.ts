@@ -97,9 +97,13 @@ export function nextActionLabel(status: OrderStatusValue | undefined): string | 
   return isOrderStatus(status) ? (NEXT_ACTION_LABEL[status] ?? null) : null;
 }
 
-/** Admins may cancel an order that has not been delivered or closed. */
+/**
+ * Admins may cancel an order that has not been delivered or closed. An order
+ * with no recorded status is not one of them: there is no stored step to cancel
+ * from, and the backend would refuse the transition anyway.
+ */
 export function adminCanCancel(order: Order): boolean {
-  return (ADMIN_CANCELLABLE as string[]).includes(order.status);
+  return typeof order.status === 'string' && (ADMIN_CANCELLABLE as string[]).includes(order.status);
 }
 
 /**
@@ -108,8 +112,9 @@ export function adminCanCancel(order: Order): boolean {
  * payment, cancelled, payment failed).
  *
  * `undefined` when this merchant *has* a fulfilment entry but it records no
- * status. Falling back to the order status there would invent progress the
- * stored document never claimed.
+ * status, and when the order itself records none. Falling back to the order
+ * status — or, for the order, to `placed` — would invent progress the stored
+ * document never claimed.
  */
 export function statusFor(order: Order, merchantId: string | null): OrderStatusValue | undefined {
   if (!merchantId) return order.status;

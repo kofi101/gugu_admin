@@ -51,7 +51,16 @@ export type Order = {
   /** users/{userId}/orders/{id} */
   userId: string;
   orderNumber: string;
-  status: OrderStatusValue;
+  /**
+   * Absent when the stored document records no usable status, for the same
+   * reason a history row's and a fulfilment entry's is: coercing it to `placed`
+   * would claim a step the document never took, and would offer "Start
+   * processing" on an order nobody placed. Everything that reads it — the badge,
+   * the strip, `isFulfilling`, `nextStatus`, `adminCanCancel`, the merchant
+   * filters and the overview's "Other" bucket — already treats an unusable
+   * status as no status.
+   */
+  status?: OrderStatusValue;
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
   lines: OrderLine[];

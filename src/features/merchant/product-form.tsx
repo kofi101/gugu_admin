@@ -68,6 +68,14 @@ export type WriteBlocker = {
 const CONTENT_FIELDS = ['name', 'description', 'categoryId', 'subCategoryId', 'imageUrls', 'highlights'];
 
 /**
+ * Blocked fields a commercial-only save cannot clear, so saving has to take the
+ * review path instead. The content fields, because that write is the only one
+ * that rewrites them; and `isActive`, because the update rule's own gate is only
+ * satisfied by a write that sets `approvalStatus: 'pending'` and `isActive: false`.
+ */
+const REVIEW_FORCING_FIELDS = [...CONTENT_FIELDS, 'isActive'];
+
+/**
  * What the rules see. The parsed Product is sanitised for rendering (a stored
  * number in `supportNote` is dropped rather than rendered), but the rules still
  * read the stored value, so the checks below must too.
@@ -248,6 +256,24 @@ export function productWriteBlockers(p: Product): WriteBlocker[] {
   if (!isUnset(storedId) && !(typeof storedId === 'string' && storedId.length <= PRODUCT_LIMITS.idMax))
     out.push({ field: 'id', fixable: false, reason: 'its stored product ID is not saved as GUGU expects' });
 
+  // Not a `productValuesOk()` check: the *update* rule's own gate, which the
+  // banner has to cover too, or "GUGU will refuse any change" would be silent on
+  // a write it really does refuse. A product stored live but never approved
+  // (`isActive: true` with `approvalStatus` missing or not 'approved') fails
+  //   request.resource.data.get('isActive', false) != true
+  //     || (resource.data.approvalStatus == 'approved'
+  //         && request.resource.data.approvalStatus == 'approved')
+  // on every save that leaves `isActive` alone — that is, every commercial-only
+  // save. It is fixable, but only by a save that also writes
+  // `{ approvalStatus: 'pending', isActive: false }`, so `REVIEW_FORCING_FIELDS`
+  // above makes this blocker force that write the way a content blocker does.
+  if (storedValue(p, 'isActive') === true && storedValue(p, 'approvalStatus') !== 'approved')
+    out.push({
+      field: 'isActive',
+      fixable: true,
+      reason: 'it is showing to shoppers without being approved',
+    });
+
   return out;
 }
 
@@ -392,9 +418,15 @@ export function ProductForm({ product }: { product?: Product }) {
   // A stored related-products list the rules refuse is repaired by this save;
   // there is nothing for the merchant to type first.
   const relatedFix = product ? relatedProductIdsFix(product) : null;
-  // Content fields are only written as part of a content edit, so a blocker in
-  // one of them has to force that write — otherwise saving leaves it in place.
-  const contentBlocked = fixable.some((b) => CONTENT_FIELDS.includes(b.field));
+  // These are only cleared by the write that also sends the product back for
+  // review, so a blocker in one of them has to force that write — otherwise
+  // saving leaves it in place and the rules refuse the save again.
+  const contentBlocked = fixable.some((b) => REVIEW_FORCING_FIELDS.includes(b.field));
+  // The one blocker that is not a stored *value* the merchant has to correct:
+  // the product is live without approval, and saving alone repairs it. When it is
+  // the only blocker the banner must not send them looking for a field to fix,
+  // and hiding the product is in fact the one write the rules would still accept.
+  const onlyReviewBlocked = blockers.length > 0 && blockers.every((b) => b.field === 'isActive');
 
   const willReview =
     !product ||
@@ -508,11 +540,14 @@ export function ProductForm({ product }: { product?: Product }) {
           <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
           <p>
             <strong className="font-semibold">GUGU will refuse any change to this product until it is fixed</strong>{' '}
-            because {blockerReasons([...fixable, ...unfixable])}. That includes hiding or showing it.
+            because {blockerReasons([...fixable, ...unfixable])}.{' '}
+            {onlyReviewBlocked ? 'That includes showing it to shoppers.' : 'That includes hiding or showing it.'}
             {fixable.length ? (
               <>
                 {' '}
-                Fix the fields below and save — that clears {unfixable.length ? 'those' : 'it'}.
+                {onlyReviewBlocked
+                  ? 'Saving this form clears it: the product goes back to GUGU staff for approval and stays hidden from shoppers until they have checked it.'
+                  : `Fix the fields below and save — that clears ${unfixable.length ? 'those' : 'it'}.`}
                 {relatedNote ? ` Saving also ${relatedNote}.` : ''}
               </>
             ) : null}
@@ -535,8 +570,8 @@ export function ProductForm({ product }: { product?: Product }) {
             Currently <StatusBadge status={product.approvalStatus ?? 'pending'} />.{' '}
             {contentBlocked ? (
               <strong className="font-semibold">
-                Saving rewrites the details GUGU rejected, so the product goes back to GUGU staff for approval and is
-                hidden from shoppers until then.
+                Clearing what is blocking this product needs the write that sends it back to GUGU staff for approval, so
+                saving hides it from shoppers until they have checked it.
               </strong>
             ) : willReview && (isDirty || imagesChanged) ? (
               <strong className="font-semibold">
