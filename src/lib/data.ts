@@ -238,15 +238,20 @@ export function watchBanners(next: Next<Banner[]>, fail: Fail) {
 /* ---------- Admin ---------- */
 
 export function watchApplications(status: MerchantApplication['status'], next: Next<MerchantApplication[]>, fail: Fail) {
-  const q = query(collection(firebase().db, 'merchant_applications'), where('status', '==', status), limit(200));
+  // Newest first, ordered by the server rather than by the 200 documents
+  // Firestore happened to return. Without the orderBy the limit picks an
+  // arbitrary 200 by document id, so the most recent cancellation — the one
+  // support is phoned about — can be missing outright. The composite index
+  // (status ASC, createdAt DESC) is already deployed.
+  const q = query(
+    collection(firebase().db, 'merchant_applications'),
+    where('status', '==', status),
+    orderBy('createdAt', 'desc'),
+    limit(200)
+  );
   return onSnapshot(
     q,
-    (s) =>
-      next(
-        s.docs
-          .map((d) => ({ ...(d.data() as MerchantApplication), uid: d.id }))
-          .sort((a, b) => (a.createdAt?.toMillis() ?? 0) - (b.createdAt?.toMillis() ?? 0))
-      ),
+    (s) => next(s.docs.map((d) => ({ ...(d.data() as MerchantApplication), uid: d.id }))),
     fail
   );
 }
