@@ -55,12 +55,17 @@ const status = (v: unknown): OrderStatusValue => statusOrNone(v) ?? 'placed';
 
 type HistoryEntry = NonNullable<Order['statusHistory']>[number];
 
-/** Keeps only well-formed history rows, each with a string status. */
+/**
+ * History rows, each status validated the way a fulfilment entry's is. A row
+ * that is not an object is dropped; an object row is kept, because its `at` and
+ * `by` are still true, and a row with no usable status keeps none rather than
+ * reading as "Placed" — a status the stored row never recorded.
+ */
 const toHistory = (v: unknown): HistoryEntry[] =>
   Array.isArray(v)
     ? v
         .filter((e): e is Record<string, unknown> => Boolean(e) && typeof e === 'object' && !Array.isArray(e))
-        .map((e) => ({ ...e, status: status(e.status) }) as HistoryEntry)
+        .map((e) => ({ ...e, status: statusOrNone(e.status) }) as HistoryEntry)
     : [];
 
 /**
@@ -95,6 +100,11 @@ export function toProduct(snap: Snap): Product {
     categoryId: str(d.categoryId) ?? '',
     subCategoryId: str(d.subCategoryId) ?? '',
     name: str(d.name) ?? 'Untitled product',
+    // Sanitised like every other text field: a stored number here used to reach
+    // the form's defaults and fail zod with "expected string, received number",
+    // while the banner promised saving would fix it. Saving does fix it — the
+    // blocker still fires, because it reads `stored`, not this.
+    description: str(d.description),
     price: num(d.price),
     discountPrice: typeof d.discountPrice === 'number' ? d.discountPrice : null,
     currency: str(d.currency) ?? 'GHS',

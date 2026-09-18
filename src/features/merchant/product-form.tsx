@@ -75,8 +75,23 @@ const CONTENT_FIELDS = ['name', 'description', 'categoryId', 'subCategoryId', 'i
 const storedValue = (p: Product, key: string): unknown =>
   p.stored ? p.stored[key] : (p as unknown as Record<string, unknown>)[key];
 
-/** Rules treat a missing value and an explicit null the same: neither is checked. */
+/**
+ * Rules treat a missing value and an explicit null the same: neither is checked.
+ * True of every optional field whose rule spells out `d[key] == null ||`, which
+ * is all of them bar one — see `storedHas` for the exception.
+ */
 const isUnset = (v: unknown) => v === undefined || v === null;
+
+/**
+ * `key in d`, as the rules ask it.
+ *
+ * Only `currency` needs this. Its rule is `!('currency' in d) || d.currency ==
+ * 'GHS'` with no `== null` escape, so a stored `currency: null` is *present* and
+ * not `'GHS'`: the rules refuse the write, including the Hide/Show toggle, while
+ * `isUnset` would read it as absent and raise no banner at all.
+ */
+const storedHas = (p: Product, key: string): boolean =>
+  key in (p.stored ?? (p as unknown as Record<string, unknown>));
 
 const count = formatCount;
 
@@ -173,9 +188,15 @@ export function productWriteBlockers(p: Product): WriteBlocker[] {
       out.push({ field: 'discountPrice', fixable: true, reason: 'its sale price is not below its price' });
   }
 
+  // Present-and-not-GHS, not "set and not GHS": a stored null is refused too, and
+  // saving repairs it, because every write from this form sets currency to GHS.
   const currency = storedValue(p, 'currency');
-  if (!isUnset(currency) && currency !== 'GHS')
-    out.push({ field: 'currency', fixable: true, reason: 'its currency is not GHS' });
+  if (storedHas(p, 'currency') && currency !== 'GHS')
+    out.push({
+      field: 'currency',
+      fixable: true,
+      reason: isUnset(currency) ? 'its currency is saved as empty instead of GHS' : 'its currency is not GHS',
+    });
 
   const stock = storedValue(p, 'stockQuantity');
   if (!isUnset(stock) && !(Number.isInteger(stock) && (stock as number) >= 0 && (stock as number) <= PRODUCT_LIMITS.stockMax))

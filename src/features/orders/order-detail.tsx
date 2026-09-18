@@ -17,6 +17,7 @@ import {
   adminCanCancel,
   cancelPreview,
   cashDue,
+  fulfilmentLikeHistory,
   historyLabel,
   isFulfilling,
   merchantCanCancel,
@@ -149,12 +150,21 @@ export function OrderDetail({ merchantId, mode }: { merchantId: string | null; m
   const preview = cancelPreview(order);
   const fulfilmentEntries = mode === 'admin' && order.fulfilment ? Object.entries(order.fulfilment) : [];
   const ownHistory = merchantId ? order.fulfilment?.[merchantId]?.history : undefined;
-  // "Your part" scope: a merchant sees its own fulfilment history only. The
-  // order-wide history is its own part only when it is the single seller;
-  // otherwise it would leak other sellers' progress onto this page.
+  // "Your part" scope: a merchant sees its own fulfilment history only. With no
+  // stored fulfilment history (orders placed before per-merchant fulfilment),
+  // the order-wide history stands in, but only for the single seller: for anyone
+  // else it would leak other sellers' progress onto this page. Even then it is
+  // not the same list — `fulfilmentLikeHistory` drops the payment events an
+  // order records and a fulfilment history never does.
   const soleSeller = Boolean(merchantId) && order.merchantIds.length === 1 && order.merchantIds[0] === merchantId;
   const orderHistory = order.statusHistory ?? [];
-  const history = !merchantId ? orderHistory : (ownHistory?.length ? ownHistory : soleSeller ? orderHistory : []);
+  const history = !merchantId
+    ? orderHistory
+    : ownHistory?.length
+      ? ownHistory
+      : soleSeller
+        ? fulfilmentLikeHistory(orderHistory)
+        : [];
   const ship = order.shipping ?? {};
   const address = [ship.line1, ship.line2, ship.city, ship.region, ship.postalCode].filter(Boolean).join(', ');
 

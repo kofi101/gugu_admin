@@ -22,6 +22,16 @@ export type OrderStatus =
  */
 export type OrderStatusValue = OrderStatus | (string & {});
 
+/**
+ * One row of an order's `statusHistory`, or of a merchant's fulfilment history.
+ *
+ * `status` is optional for the same reason a fulfilment entry's is: a stored row
+ * that carries no usable status recorded none, and coercing it to `placed` would
+ * put a status in the merchant's history that the document never claimed. Such a
+ * row still has a true `at`/`by`, so it is kept and rendered as "Unknown".
+ */
+export type OrderHistoryEntry = { status?: OrderStatusValue; at?: Timestamp; by?: string };
+
 export type PaymentStatus = 'unpaid' | 'pending' | 'paid' | 'failed';
 export type PaymentMethod = 'cash_on_delivery' | 'mobile_money_on_delivery' | 'expresspay';
 
@@ -62,7 +72,7 @@ export type Order = {
   };
   createdAt?: Timestamp;
   updatedAt?: Timestamp;
-  statusHistory?: { status: OrderStatusValue; at?: Timestamp; by?: string }[];
+  statusHistory?: OrderHistoryEntry[];
   /** Per-merchant fulfilment; the order status is the least-advanced entry. */
   fulfilment?: Record<
     string,
@@ -74,7 +84,7 @@ export type Order = {
        */
       status?: OrderStatusValue;
       deliveredAt?: Timestamp;
-      history?: { status: OrderStatusValue; at?: Timestamp; by?: string }[];
+      history?: OrderHistoryEntry[];
     }
   >;
   /** Merchants whose undelivered parts were cancelled; delivered parts are kept. */

@@ -1,5 +1,5 @@
 import { humanize } from './format';
-import type { Order, OrderLine, OrderStatus, OrderStatusValue } from './types';
+import type { Order, OrderHistoryEntry, OrderLine, OrderStatus, OrderStatusValue } from './types';
 
 export const ORDER_STATUSES: OrderStatus[] = [
   'awaiting_payment',
@@ -35,9 +35,31 @@ export function statusLabel(status: OrderStatusValue | null | undefined): string
   return isOrderStatus(status) ? STATUS_LABEL[status] : humanize(status);
 }
 
-export function historyLabel(status: OrderStatusValue): string {
+export function historyLabel(status: OrderStatusValue | undefined): string {
   if (status === 'partially_cancelled') return 'Partly cancelled';
   return statusLabel(status);
+}
+
+/**
+ * Statuses only an order's own `statusHistory` records. They are payment events:
+ * no merchant's fulfilment history ever carries them, so they must not appear
+ * under "History of your part".
+ */
+const PAYMENT_ONLY: string[] = ['awaiting_payment', 'payment_failed'];
+
+/**
+ * The order-wide history narrowed to the rows a merchant's own fulfilment
+ * history would also hold, for the sole-seller fallback below.
+ *
+ * The two are close but not identical. On an online-payment order the order also
+ * logs `awaiting_payment`, and `payment_failed` if the payment is declined;
+ * neither is written to any `fulfilment[merchantId].history`. `placed` is kept,
+ * because fulfilment records it too (at creation) — on an ExpressPay order the
+ * order-wide row is written by the payment provider when the money clears, but
+ * it marks the same thing: this seller's part may now be prepared.
+ */
+export function fulfilmentLikeHistory(history: OrderHistoryEntry[]): OrderHistoryEntry[] {
+  return history.filter((h) => typeof h.status !== 'string' || !PAYMENT_ONLY.includes(h.status));
 }
 
 /** The fulfilment path shown as a woven strip. */
