@@ -14,6 +14,7 @@ import {
   type DocumentData,
   type DocumentSnapshot,
   type QueryConstraint,
+  type Timestamp,
 } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { functionErrorCode } from './errors';
@@ -24,6 +25,7 @@ import type {
   Category,
   Merchant,
   MerchantApplication,
+  MerchantApplicationReview,
   Order,
   OrderStatus,
   OrderStatusValue,
@@ -38,6 +40,16 @@ type Snap = DocumentSnapshot<DocumentData>;
 const num = (v: unknown, fallback = 0) => (typeof v === 'number' && Number.isFinite(v) ? v : fallback);
 const str = (v: unknown) => (typeof v === 'string' ? v : undefined);
 const strList = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string') : []);
+/**
+ * A stored timestamp, or `undefined` for anything else. `toDate()` in
+ * `format.ts` reads a timestamp-shaped value with the `in` operator, which
+ * throws on a primitive, so a field that is meant to be a Timestamp is checked
+ * here rather than where it is rendered.
+ */
+const stamp = (v: unknown): Timestamp | undefined =>
+  v !== null && typeof v === 'object' && typeof (v as { toDate?: unknown }).toDate === 'function'
+    ? (v as Timestamp)
+    : undefined;
 
 /**
  * A stored status, or `undefined` when the field is missing or is not a usable
@@ -238,17 +250,94 @@ export function watchBanners(next: Next<Banner[]>, fail: Fail) {
 /* ---------- Admin ---------- */
 
 export function watchApplications(status: MerchantApplication['status'], next: Next<MerchantApplication[]>, fail: Fail) {
-  const q = query(collection(firebase().db, 'merchant_applications'), where('status', '==', status), limit(200));
+  // Newest first, ordered by the server rather than by the 200 documents
+  // Firestore happened to return. Without the orderBy the limit picks an
+  // arbitrary 200 by document id, so the most recent cancellation — the one
+  // support is phoned about — can be missing outright. The composite index
+  // (status ASC, createdAt DESC) is already deployed.
+  const q = query(
+    collection(firebase().db, 'merchant_applications'),
+    where('status', '==', status),
+    orderBy('createdAt', 'desc'),
+    limit(200)
+  );
   return onSnapshot(
     q,
-    (s) =>
-      next(
-        s.docs
-          .map((d) => ({ ...(d.data() as MerchantApplication), uid: d.id }))
-          .sort((a, b) => (a.createdAt?.toMillis() ?? 0) - (b.createdAt?.toMillis() ?? 0))
-      ),
+    (s) => next(s.docs.map((d) => ({ ...(d.data() as MerchantApplication), uid: d.id }))),
     fail
   );
+}
+
+/**
+ * One row of an applicant's decision history, read the way `toProduct` and
+ * `toHistory` read theirs: nothing is assumed about a document this dashboard
+ * does not write. A field holding the wrong shape is dropped rather than passed
+ * on to a formatter.
+ */
+function toApplicationReview(snap: Snap): MerchantApplicationReview {
+  const d = snap.data() ?? {};
+  const sub = d.submission && typeof d.submission === 'object' && !Array.isArray(d.submission)
+    ? (d.submission as Record<string, unknown>)
+    : {};
+  return {
+    id: snap.id,
+    decision: str(d.decision)?.trim() || undefined,
+    // `null` is what the Function writes for "no note", and it is kept as
+    // `undefined` here so one check covers both.
+    note: str(d.note) || undefined,
+    reviewedBy: str(d.reviewedBy),
+    reviewedAt: stamp(d.reviewedAt),
+    merchantId: str(d.merchantId),
+    submission: {
+      businessName: str(sub.businessName),
+      phone: str(sub.phone),
+      email: str(sub.email),
+      regionId: str(sub.regionId),
+      cityId: str(sub.cityId),
+      documentUrls: strList(sub.documentUrls),
+      submittedAt: stamp(sub.submittedAt),
+    },
+  };
+}
+
+/**
+ * How many past decisions a row shows. Exported so the list can say it is
+ * truncated instead of quietly stopping at the cap, like the order feeds.
+ */
+export const APPLICATION_REVIEW_LIMIT = 10;
+
+/**
+ * Every decision GUGU has recorded about this applicant, newest first.
+ *
+ * `reviewMerchantApplication` appends to `merchant_applications/{uid}/reviews`
+ * inside the decision's own transaction, and the rules make it admin-read with
+ * no client writes. That matters because an applicant may overwrite a rejected
+ * application with a fresh one, and that replace takes `reviewNote`,
+ * `reviewedBy` and `reviewedAt` with it — so the application document alone
+ * shows the next reviewer a spotless `pending` record of someone who has already
+ * been turned down.
+ *
+ * A one-shot read, not a `watch*`: the collection is append-only, and the only
+ * thing that appends to it is a decision made here, which moves the application
+ * out of the tab it was decided in. A listener per row would mean one live
+ * subscription for every application on the page (up to 200) to watch data that
+ * cannot change while it is on screen.
+ *
+ * Ordered by the server. Without the `orderBy` the cap would return an arbitrary
+ * ten by document id — auto-ids, so effectively at random — which is the failure
+ * this branch already fixed once for the applications list itself. A row with no
+ * `reviewedAt` is not returned at all by an `orderBy` on that field; every row is
+ * written with a server timestamp, so such a row is not one the platform writes.
+ */
+export async function listApplicationReviews(uid: string): Promise<MerchantApplicationReview[]> {
+  const s = await getDocs(
+    query(
+      collection(firebase().db, 'merchant_applications', uid, 'reviews'),
+      orderBy('reviewedAt', 'desc'),
+      limit(APPLICATION_REVIEW_LIMIT)
+    )
+  );
+  return s.docs.map(toApplicationReview);
 }
 
 export function watchProductsByApproval(status: 'pending' | 'approved' | 'rejected', next: Next<Product[]>, fail: Fail) {

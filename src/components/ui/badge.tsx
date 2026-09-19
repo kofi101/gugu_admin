@@ -46,6 +46,10 @@ const statusTones: Record<string, Tone> = {
   pending: 'pending',
   approved: 'ok',
   rejected: 'bad',
+  // A merchant application the applicant cancelled. Grey, like a cancelled
+  // order: nothing was decided and nothing went wrong, which is exactly what
+  // the red 'bad' of `rejected` would wrongly say.
+  withdrawn: 'neutral',
   paid: 'ok',
   unpaid: 'neutral',
   failed: 'bad',
