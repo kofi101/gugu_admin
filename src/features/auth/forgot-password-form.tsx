@@ -1,6 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useHydrated } from '@/hooks/use-hydrated';
 import { FirebaseError } from 'firebase/app';
 import { MailCheck } from 'lucide-react';
 import Link from 'next/link';
@@ -21,6 +22,7 @@ export function ForgotPasswordForm() {
   const { sendReset } = useAuth();
   const [sentTo, setSentTo] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const hydrated = useHydrated();
   const {
     register,
     handleSubmit,
@@ -57,8 +59,10 @@ export function ForgotPasswordForm() {
     );
   }
 
+  // Same pre-hydration guard as the sign-in form: a form with no method submits
+  // as GET, which would put the address in the URL and the browser history.
   return (
-    <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
+    <form method="post" onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
       {formError ? (
         <p role="alert" className="rounded-lg border border-bad-700/25 bg-bad-50 px-3.5 py-3 text-[0.9375rem] text-bad-700">
           {formError}
@@ -67,7 +71,7 @@ export function ForgotPasswordForm() {
       <Field label="Email" error={errors.email?.message}>
         {(p) => <Input {...p} type="email" autoComplete="email" inputMode="email" {...register('email')} />}
       </Field>
-      <Button type="submit" loading={isSubmitting}>
+      <Button type="submit" loading={!hydrated || isSubmitting}>
         Send reset link
       </Button>
       <Link href="/sign-in" className="text-sm font-semibold text-brand-700 underline-offset-4 hover:underline">
